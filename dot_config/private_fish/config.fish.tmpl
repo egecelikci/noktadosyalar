@@ -1,0 +1,40 @@
+set fish_greeting ""
+
+abbr -a -g ls ls -laG
+
+if type -q eza
+    abbr --add -g ls 'eza --long --classify --all --header --git --no-user --tree --level 1'
+end
+
+if type -q bat
+    abbr --add -g cat 'bat'
+end
+
+{{ if eq .chezmoi.os "darwin" }}
+set -gx SSH_AUTH_SOCK $HOME/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+set -gx JAVA_HOME (/usr/libexec/java_home -v 17)
+
+test -e {$HOME}/.iterm2_shell_integration.fish ; and source {$HOME}/.iterm2_shell_integration.fish
+{{ end }}
+
+{{ if eq .chezmoi.os "linux" }}
+
+{{ end }}
+
+if status is-interactive
+    if type -q zoxide
+        zoxide init fish | source
+    end
+
+    if type -q fzf
+        fzf --fish | source
+    end
+
+    # Atuin must be initialized last to properly hook history
+    if type -q atuin
+        atuin init fish | source
+    end
+end
