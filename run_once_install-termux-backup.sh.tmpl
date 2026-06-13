@@ -1,0 +1,8 @@
+{{ if eq .chezmoi.os "android" }}
+#!/bin/bash
+
+echo "Android environment detected. Bootstrapping restic backup…"
+
+# Fetch and execute the install script
+bash <(curl -fsSL https://codeberg.org/egecelikci/restic-termux-backup/raw/branch/main/install.sh)
+{{ end }}
