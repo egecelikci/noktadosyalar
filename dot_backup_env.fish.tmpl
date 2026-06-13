@@ -1,0 +1,9 @@
+set -x RESTIC_REPOSITORY 'rclone:Drive:restic'
+set -x RESTIC_PASSWORD '{{ (bitwardenSecrets "11479ea0-6123-44ea-8436-b46800f641c0").value }}'
+
+# ── 2. Rclone Configuration ──────────────────────────────────────────────────
+set -x RCLONE_CONFIG_PASS '{{ (bitwardenSecrets "0cf59961-a39b-4dc3-b620-b46800f65b1a").value }}'
+
+# ── 3. Google Drive OAuth Overrides ──────────────────────────────────────────
+set -x RCLONE_CONFIG_DRIVE_CLIENT_ID '{{ (bitwardenSecrets "650ba8c7-e988-4747-b193-b4680100473c").value }}'
+set -x RCLONE_CONFIG_DRIVE_CLIENT_SECRET '{{ (bitwardenSecrets "8555e00e-8c6e-4fb0-b4d5-b468010035b2").value }}'
