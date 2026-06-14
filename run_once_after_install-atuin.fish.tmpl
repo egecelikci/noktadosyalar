@@ -1,0 +1,17 @@
+#!/usr/bin/env fish
+
+# Only run this if the atuin binary exists
+if type -q atuin
+    # Check if already logged in to prevent errors
+    if not atuin status | string match -q "*Logged in*"
+        echo "Authenticating Atuin with Bitwarden Secrets..."
+        atuin login -u "{{ (bitwardenSecrets "d6bf04ff-6b33-42cf-bfa6-b4690133b41c").value }}" \
+                    -p "{{ (bitwardenSecrets "a437d588-0207-43ec-ac98-b4690133bcef").value }}" \
+                    -k "{{ (bitwardenSecrets "7ac89edd-5144-4026-b20a-b4690133a6cc").value }}"
+
+        echo "Syncing shell history…"
+        atuin sync
+    else
+        echo "Atuin is already authenticated."
+    end
+end
