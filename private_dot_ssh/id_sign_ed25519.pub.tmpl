@@ -1,0 +1,5 @@
+{{- if eq .chezmoi.os "darwin" -}}
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFThAK4bQKmz31+wv5lAK5BF1QLf0CT/qhr30iPtmiGT
+{{- else if eq .chezmoi.os "android" -}}
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF2XufuZr7u5/Yj4/qbkOBr7pbM3kCYQ6rlIKCPST5q3
+{{- end -}}

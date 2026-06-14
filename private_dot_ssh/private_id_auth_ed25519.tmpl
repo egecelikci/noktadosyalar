@@ -1,0 +1,3 @@
+{{- if eq .chezmoi.os "android" -}}
+{{ (bitwardenSecrets "b5f725bb-d2a4-4599-88bd-b46901407fab").value }}
+{{- end -}}
