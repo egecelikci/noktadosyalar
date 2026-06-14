@@ -1,6 +1,5 @@
-{{ if eq .chezmoi.os "android" }}
 #!/bin/bash
-
+{{ if eq .chezmoi.os "android" }}
 echo "Android environment detected. Bootstrapping restic backup…"
 
 # Fetch and execute the install script
