@@ -1,0 +1,90 @@
+directory: /mnt/unified/media/Music/
+paths:
+  default: $mb_albumartistid/$mb_releasegroupid/$mb_albumid/$mb_releasetrackid ($mb_trackid)
+import:
+  move: yes
+plugins:
+  - convert
+  - edit
+  - embedart
+  - fetchart
+  - fromfilename
+  - mbcollection
+  - mbsync
+  - inline
+  - lyrics
+  - scrub
+  - replaygain
+  - badfiles
+  - permissions
+
+permissions:
+  file: 664
+  dir: 2775
+
+artist_credit: yes
+threaded: yes
+parentwork:
+  force: no
+  auto: yes
+
+replaygain:
+  auto: yes
+  backend: ffmpeg
+
+scrub:
+  auto: yes
+
+badfiles:
+  check_on_import: yes
+  commands:
+    flac: flac --test --warnings-as-errors --silent
+    m4a: ffmpeg -v error -f null - -i
+
+fetchart:
+  quality: 75
+  cover_format: JPEG
+
+embedart:
+  auto: yes
+  remove_art_file: yes
+
+item_fields:
+  isMultidisc: 1 if disctotal > 1 else 0
+
+convert:
+  auto: no
+  format: flac
+  formats:
+    flac:
+      command: flac --best -e -p --preserve-modtime --force --verify $source -o $dest
+      extension: flac
+
+musicbrainz:
+  user: egecelikci
+  pass: '{{ (bitwardenSecrets "fa45b741-685c-4acb-9ef7-b47400f6afe5").value }}'
+  extra_tags: [barcode, catalognum, country, label, media, year]
+  genres: yes
+  external_ids:
+    discogs: no
+    bandcamp: yes
+    spotify: yes
+    deezer: yes
+    beatport: no
+    tidal: yes
+
+mbcollection:
+  auto: yes
+  collection: "1311f2bd-5473-4537-8df0-5728c33877c8"
+  remove: yes
+
+lyrics:
+  auto: yes
+  fallback: null
+  force: no
+  print: no
+  sources: [genius]
+  synced: yes
+  genius_api_key: '{{ (bitwardenSecrets "c8eec299-8cf0-4a33-b625-b47400f6e3a2").value }}'
+
+asciify_paths: yes
