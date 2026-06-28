@@ -1,0 +1,9 @@
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS
+.DS_Store
+{{ end -}}
+
+{{ if eq .chezmoi.os "android" -}}
+# Android
+.nomedia
+{{ end -}}

@@ -5,3 +5,6 @@
 .ssh/id_auth_ed25519
 .ssh/id_sign_ed25519
 {{ end }}
+
+# Team Fortress 2
+mastercomfig/
