@@ -1,0 +1,23 @@
+#!/usr/bin/env fish
+#
+set CHEZMOI_SOURCE "{{ .chezmoi.sourceDir }}"
+
+{{ if eq .chezmoi.os "darwin" -}}
+# macOS via CrossOver
+set STEAM_APPS_DIR "$HOME/Library/Application Support/Steam Library/steamapps"
+{{ else -}}
+set STEAM_APPS_DIR ""
+{{ end -}}
+
+if test -n "$STEAM_APPS_DIR"
+    set TF2_OVERRIDES_DIR "$STEAM_APPS_DIR/common/Team Fortress 2/tf/cfg/overrides"
+
+    mkdir -p "$TF2_OVERRIDES_DIR"
+
+    echo "Linking TF2 configs to $TF2_OVERRIDES_DIR..."
+    ln -sf "$CHEZMOI_SOURCE/mastercomfig/"*.cfg "$TF2_OVERRIDES_DIR/"
+
+    echo "TF2 configs successfully deployed!"
+else
+    echo "No Steam path defined for this OS. Skipping TF2 configs."
+end
