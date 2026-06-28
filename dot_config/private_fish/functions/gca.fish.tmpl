@@ -1,0 +1,44 @@
+{{ if eq .chezmoi.os "darwin" -}}
+function gca --description "Generate a precise conventional commit using Apfel"
+    argparse 'm/message=' -- $argv
+    or return 1
+
+    if not git diff --cached --quiet
+        set -l changed_files (git diff --name-only --cached | string join ", ")
+        set -l raw_diff (git diff --cached)
+
+        set -l user_hint ""
+        if set -q _flag_message
+            set user_hint "[CRITICAL USER INSTRUCTION]\nUse the following text to guide the commit description: $_flag_message"
+        end
+
+        set -l system_prompt "You are a Git auto-commit utility. Write EXACTLY ONE line.
+Format: type(scope): description
+- 'type' MUST be one of: feat, fix, chore, docs, refactor.
+- 'scope' MUST be the application name (e.g., fish, lume, beets, navidrome).
+- 'description' MUST summarize the code changes. If [CRITICAL USER INSTRUCTION] is provided, base the description entirely on it."
+
+        set -l user_payload "[STAGED FILES]
+$changed_files
+
+[GIT DIFF]
+$raw_diff
+
+$user_hint"
+
+        echo "Analyzing diff and generating commit…"
+
+        set -l commit_msg (echo "$user_payload" | apfel -s "$system_prompt" | string trim)
+        set -l commit_msg (echo "$commit_msg" | sed -E '/^```/d; s/^"//; s/"$//' | string lower)
+
+        if test -n "$commit_msg"
+            echo -e "\nGenerated Message: \e[1;32m$commit_msg\e[0m"
+            git commit -m "$commit_msg"
+        else
+            echo "Error: Apfel failed to generate a valid commit message."
+        end
+    else
+        echo "No staged changes found. Use 'git add' first."
+    end
+end
+{{ end -}}
