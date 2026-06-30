@@ -1,24 +1,44 @@
-{{ if eq .chezmoi.os "darwin" -}}
-function gca --description "Generate a precise conventional commit using Apfel"
-    argparse 'm/message=' -- $argv
+function gca --description "Generate a precise conventional commit using Ollama"
+    argparse 'm/message=' 'd/dry-run' -- $argv
     or return 1
 
     if not git diff --cached --quiet
         set -l changed_files (git diff --name-only --cached | string join ", ")
         set -l raw_diff (git diff --cached)
 
+        # Grab the last 10 commits to teach the model your personal style
+        set -l recent_commits (git log -n 10 --pretty=format:"%s" 2>/dev/null)
+
         set -l user_hint ""
         if set -q _flag_message
             set user_hint "[CRITICAL USER INSTRUCTION]\nUse the following text to guide the commit description: $_flag_message"
         end
 
-        set -l system_prompt "You are a Git auto-commit utility. Write EXACTLY ONE line.
-Format: type(scope): description
-- 'type' MUST be one of: feat, fix, chore, docs, refactor.
-- 'scope' MUST be the application name (e.g., fish, lume, beets, navidrome).
-- 'description' MUST summarize the code changes. If [CRITICAL USER INSTRUCTION] is provided, base the description entirely on it."
+        # Expanded system prompt with strict v1.0.0 specs
+        set -l system_prompt "You are an expert Git auto-commit utility adhering strictly to the Conventional Commits specification (v1.0.0). Write EXACTLY ONE line. No preamble, no quotes.
 
-        set -l user_payload "[STAGED FILES]
+The commit message should be structured as follows:
+<type>(<scope>): <description>
+
+RULES:
+1. 'type' MUST be one of: feat, fix, chore, docs, refactor, style, test, build, ci, perf.
+   - 'feat' MUST be used when a commit adds a new feature.
+   - 'fix' MUST be used when a commit represents a bug fix.
+2. 'scope' is REQUIRED. A scope MUST consist of a noun describing a section of the codebase surrounded by parenthesis, e.g., fix(parser):
+3. 'description' MUST immediately follow the colon and space after the type/scope prefix.
+4. The description MUST be under 50 characters, use the imperative mood (e.g., 'add', 'fix', NOT 'added' or 'fixes'). Do NOT capitalize the first letter, and do NOT end with a period.
+5. CRITICAL: Base your description ONLY on the actual code changes (+/- lines). Ignore file headers and unchanged context.
+6. If [CRITICAL USER INSTRUCTION] is provided, prioritize it for the description.
+
+EXAMPLES:
+feat(lang): add Polish language
+docs(readme): correct spelling of CHANGELOG
+fix(api): prevent racing of requests"
+
+        set -l user_payload "[YOUR RECENT COMMITS (Mimic this style and scope naming)]
+$recent_commits
+
+[STAGED FILES]
 $changed_files
 
 [GIT DIFF]
@@ -26,19 +46,54 @@ $raw_diff
 
 $user_hint"
 
-        echo "Analyzing diff and generating commit…"
+        set -l max_retries 3
+        set -l attempt 1
+        set -l success 0
+        set -l commit_msg ""
 
-        set -l commit_msg (echo "$user_payload" | apfel -s "$system_prompt" | string trim)
-        set -l commit_msg (echo "$commit_msg" | sed -E '/^```/d; s/^"//; s/"$//' | string lower)
+        set -l ollama_model "qwen2.5-coder:7b"
 
-        if test -n "$commit_msg"
+        # Added "temperature": 0.1 to force strict, logical responses rather than creative ones
+        set -l json_payload (printf '{"model": "%s", "messages": [{"role": "system", "content": %s}, {"role": "user", "content": %s}], "stream": false, "options": {"temperature": 0.1}}' \
+            "$ollama_model" \
+            (echo "$system_prompt" | jq -R -s '.') \
+            (echo "$user_payload" | jq -R -s '.'))
+
+        while test $attempt -le $max_retries
+            if test $attempt -eq 1
+                echo "Analyzing diff with $ollama_model and generating commit…"
+            else
+                echo -e "\nRetrying AI generation (Attempt $attempt of $max_retries)…"
+            end
+
+            set -l raw_response (curl -s http://localhost:11434/api/chat -H "Content-Type: application/json" -d "$json_payload")
+
+            set commit_msg (echo "$raw_response" | jq -r '.message.content' | string trim)
+            set commit_msg (echo "$commit_msg" | sed -E '/^```/d; s/^"//; s/"$//; s/\.$//' | string lower)
+
+            if string match -qr '^(feat|fix|chore|docs|refactor|style|test|build|ci|perf)\([a-z0-9_-]+\): .+$' "$commit_msg"
+                set success 1
+                break
+            end
+
+            echo -e "\n\e[1;31mValidation Failed:\e[0m Ollama generated a malformed commit message: \e[1;33m$commit_msg\e[0m" >&2
+            set attempt (math $attempt + 1)
+        end
+
+        if test $success -eq 1
             echo -e "\nGenerated Message: \e[1;32m$commit_msg\e[0m"
-            git commit -m "$commit_msg"
+
+            # Dry Run execution logic
+            if set -q _flag_dry_run
+                echo -e "\e[1;33m[DRY RUN] Commit skipped. To actually commit, run without -d or --dry-run\e[0m"
+            else
+                git commit -m "$commit_msg"
+            end
         else
-            echo "Error: Apfel failed to generate a valid commit message."
+            echo "Ollama failed to generate a valid commit message after $max_retries attempts. Please commit manually." >&2
+            return 1
         end
     else
         echo "No staged changes found. Use 'git add' first."
     end
 end
-{{ end -}}
