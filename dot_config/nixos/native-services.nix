@@ -129,6 +129,7 @@ in
   # a container rather than fighting the native module for marginal benefit.
   # See containers.nix.
 
+<<<<<<< HEAD
 <<<<<<< Updated upstream
   # ---- cloudflared [VERIFIED: services.cloudflared exists] ----
   # credentialsFile needs a real locally-managed tunnel credentials JSON, not
@@ -154,6 +155,8 @@ in
   # from container labels. Going native means writing the routes explicitly - more
   # verbose, but it's one file instead of scattered labels, and it's easier to audit.
 >>>>>>> Stashed changes
+=======
+>>>>>>> 27d0484 (chore(nixos): rm cloudflared from native services)
   services.caddy = {
     enable = true;
     extraConfig = ''
