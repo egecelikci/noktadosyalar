@@ -39,7 +39,7 @@ in
       image = "cloudflare/cloudflared:latest";
       cmd = [ "tunnel" "run" ];
       environmentFiles = [ "${homeDir}/.config/containers/secrets/cloudflared.env" ];
-      extraOptions = [ "--network=${net}" ];
+      extraOptions = [ "--network=host" ];
     };
 
     # ---- auth ----
