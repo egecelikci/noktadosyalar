@@ -52,6 +52,7 @@
   # Set up your primary user account
   users.users.egecelikci = {
     isNormalUser = true;
+    shell = pkgs.fish;
     description = "Ege Çelikçi";
     extraGroups = [ "networkmanager" "wheel" "docker" ]; # wheel allows sudo
     openssh.authorizedKeys.keys = [
@@ -149,4 +150,3 @@
   system.stateVersion = "26.05"; # Did you read the comment?
 
 }
-
