@@ -1,0 +1,50 @@
+#!/usr/bin/env fish
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Trigger re-runs if the Beets config changes:
+# config_hash: {{ include "dot_config/beets/private_config.yaml.tmpl" | sha256sum }}
+
+echo "Ensuring Beets and audio dependencies are installed…"
+
+# 1. Install system dependencies
+for pkg in chromaprint flac ffmpeg
+    if not brew list $pkg >/dev/null 2>&1
+        brew install $pkg
+    end
+end
+
+# 2. Ensure Beets is installed via pipx with necessary extras
+if not type -q beet
+    echo "Installing Beets with fetchart and lyrics extras…"
+    pipx install "beets[fetchart,lyrics]"
+end
+
+# 3. Inject pyacoustid for the chroma plugin
+if not pipx runpip beets show pyacoustid >/dev/null 2>&1
+    echo "Injecting pyacoustid into Beets environment…"
+    pipx inject beets pyacoustid
+end
+
+# 4. Patch LRCLib backend
+set venv_python "$HOME/.local/pipx/venvs/beets/bin/python"
+set lrclib_url "http://localhost:3300/api"
+
+if test -x "$venv_python"
+    set lyrics_path ($venv_python -c "import beetsplug.lyrics as m; print(m.__file__)")
+
+    if test -f "$lyrics_path"
+        if grep -q "$lrclib_url" "$lyrics_path"
+            echo "LRCLib backend already patched."
+        else if grep -q 'BASE_URL = "https://lrclib.net/api"' "$lyrics_path"
+            echo "Patching lyrics.py to point to local lrclib instance…"
+            sed -i '' "s|BASE_URL = \"https://lrclib.net/api\"|BASE_URL = \"$lrclib_url\"|" "$lyrics_path"
+        else
+            echo "Warning: BASE_URL line not found — beets internals changed, patch skipped." >&2
+        end
+    else
+        echo "Warning: lyrics.py not found at $lyrics_path" >&2
+    end
+end
+
+echo "Beets environment is fully synced!"
+{{ end -}}

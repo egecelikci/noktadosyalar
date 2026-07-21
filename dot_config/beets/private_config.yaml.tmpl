@@ -1,29 +1,63 @@
-directory: /mnt/unified/media/Music/
+directory: /Volumes/Toshiba/Music/Library
+library: ~/.config/beets/library.db
+
 paths:
-  default: $mb_albumartistid/$mb_releasegroupid/$mb_albumid/$mb_releasetrackid ($mb_trackid)
+  comp: Compilations/[$year] $album%aunique{}/%if{$isMultidisc,Disc $disc/}$track. $artist - $title
+  singleton: Non-Album/$albumartist - $title
+  default: $albumartist/[$year] $album%aunique{}/%if{$isMultidisc,Disc $disc/}$track. $title
+
 import:
-  move: yes
+  write: yes
+  move: no
+  copy: yes
+  autotag: yes
+  quiet_fallback: skip
+  timid: no
+
 plugins:
+  - badfiles
+  - chroma
   - convert
+  - duplicates
   - edit
   - embedart
   - fetchart
   - fromfilename
-  - mbcollection
-  - mbsync
+  - info
   - inline
   - lyrics
-  - scrub
+  - mbcollection
+  - mbsync
+  - missing
+  - musicbrainz
   - replaygain
-  - badfiles
-  - permissions
+  - scrub
+  - zero
 
-permissions:
-  file: 664
-  dir: 2775
+zero:
+  fields: comments grouping encoder
+  update_database: true
 
-artist_credit: yes
+missing:
+  format: $albumartist - $album - $title
+  count: yes
+  total: yes
+
+duplicates:
+  checksum: no
+
+chroma:
+  auto: yes
+
+aunique:
+  keys: albumartist album
+  modifiers: mb_albumid
+  bracket: '()'
+
+artist_credit: no
+
 threaded: yes
+
 parentwork:
   force: no
   auto: yes
@@ -38,12 +72,17 @@ scrub:
 badfiles:
   check_on_import: yes
   commands:
-    flac: flac --test --warnings-as-errors --silent
+    flac: flac --test --silent
     m4a: ffmpeg -v error -f null - -i
+    mp3: "true"
 
 fetchart:
-  quality: 75
+  auto: yes
+  maxwidth: 1200
+  quality: 85
   cover_format: JPEG
+  sources:
+    - coverart
 
 embedart:
   auto: yes
@@ -75,16 +114,26 @@ musicbrainz:
 
 mbcollection:
   auto: yes
-  collection: "1311f2bd-5473-4537-8df0-5728c33877c8"
+  collection: "0f143c2a-3b4b-41bc-8c22-9206d0767816"
   remove: yes
 
 lyrics:
-  auto: yes
+  auto: no
   fallback: null
   force: no
   print: no
-  sources: [genius]
+  sources: [lrclib, genius]
   synced: yes
   genius_api_key: '{{ (bitwardenSecrets "c8eec299-8cf0-4a33-b625-b47400f6e3a2").value }}'
 
 asciify_paths: yes
+
+match:
+  preferred:
+    media: ['Digital Media|File']
+  ignore_case: yes
+  ignore_accent: yes
+
+watch:
+  directories:
+    - /Volumes/Toshiba/Music/Downloads

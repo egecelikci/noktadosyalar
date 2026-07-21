@@ -54,10 +54,14 @@ $user_hint"
                 echo -e "\nRetrying (Attempt $attempt of $max_retries)…"
             end
 
-            set -l raw_response (curl -s http://localhost:11434/api/chat -H "Content-Type: application/json" -d "$json_payload")
+            set -l raw_response (curl -s --max-time 30 http://localhost:11434/api/chat -H "Content-Type: application/json" -d "$json_payload")
 
-            set commit_msg (echo "$raw_response" | jq -r '.message.content' | string trim)
-            set commit_msg (echo "$commit_msg" | sed -E '/^```/d; s/^"//; s/"$//; s/\.$//' | string lower)
+            if test $status -ne 0
+                echo -e "\n\e[1;31mError:\e[0m Could not reach Ollama at localhost:11434. Is the service running?" >&2
+                return 1
+            end
+
+            set commit_msg (echo "$raw_response" | jq -r '.message.content' | string trim)            set commit_msg (echo "$commit_msg" | sed -E '/^```/d; s/^"//; s/"$//; s/\.$//' | string lower)
 
             if string match -qr '^(feat|fix|chore|docs|refactor|style|test|build|ci|perf)\([a-z0-9_-]+\): .+$' "$commit_msg"
                 set success 1

@@ -1,0 +1,88 @@
+#!/usr/bin/env fish
+# chezmoi template: dot_config/containers/private_executable_migrate_hdd.fish.tmpl
+
+{{ if eq .chezmoi.os "darwin" -}}
+source {{ .chezmoi.homeDir }}/.backup_env.fish
+
+set -l MEDIA_DRIVE "{{ index .media_paths .chezmoi.os }}"
+set -l COMPOSE_FILE "{{ .chezmoi.homeDir }}/.config/containers/docker-compose.yaml"
+set -l RESTIC_TAG "hdd-migration"
+set -l DOCKER_SOCK "$HOME/.orbstack/run/docker.sock"
+
+if test (count $argv) -ne 1; or not contains $argv[1] backup restore
+    echo -e "\e[1;31mError: You must specify either 'backup' or 'restore'.\e[0m"
+    echo "Usage: ./migrate_hdd.fish [backup|restore]"
+    exit 1
+end
+
+set -l action $argv[1]
+
+if test "$action" = "backup"; and not test -d $MEDIA_DRIVE
+    echo -e "\e[1;31mError: Media drive not found at $MEDIA_DRIVE. Is it plugged in?\e[0m"
+    exit 1
+end
+
+function is_docker_running
+    if test -S "$DOCKER_SOCK"; or docker info >/dev/null 2>&1
+        return 0
+    end
+    return 1
+end
+
+if test "$action" = "backup"
+    if is_docker_running
+        echo -e "\e[1;34m[1/3] Stopping media containers to ensure data integrity...\e[0m"
+        docker compose -f $COMPOSE_FILE stop
+    else
+        echo -e "\e[1;33m[1/3] ⚠️ Docker daemon offline. Skipping container shutdown...\e[0m"
+    end
+
+    echo -e "\e[1;34m[2/3] Initiating scoped Restic backup for Music, TV, Anime, and Movies...\e[0m"
+
+    # Exclude macOS metadata and hidden files from the backup
+    restic backup "$MEDIA_DRIVE/Music" "$MEDIA_DRIVE/TV" "$MEDIA_DRIVE/Anime" "$MEDIA_DRIVE/Movies" \
+        --tag $RESTIC_TAG \
+        --host sunucu \
+        --exclude "._*" \
+        --exclude ".DS_Store" \
+        --exclude ".Spotlight-V100" \
+        --exclude ".fseventsd" \
+        --exclude ".Trashes"
+
+    echo -e "\e[1;32m[3/3] Backup complete!\e[0m"
+    echo "Safe to erase $MEDIA_DRIVE and format as macOS Extended (HFS+)."
+    echo -e "\e[1;33mWARNING: Data in /torrents and /Parallels was NOT backed up.\e[0m"
+    exit 0
+end
+
+if test "$action" = "restore"
+    if not test -d $MEDIA_DRIVE
+        echo -e "\e[1;31mError: Target directory $MEDIA_DRIVE does not exist. Ensure the drive is mounted with the correct name.\e[0m"
+        exit 1
+    end
+
+    echo -e "\e[1;34m[1/3] Verifying Restic snapshots on Google Drive...\e[0m"
+
+    if not restic snapshots --tag $RESTIC_TAG --host sunucu >/dev/null 2>&1
+        echo -e "\e[1;31mError: No snapshot found with tag $RESTIC_TAG.\e[0m"
+        exit 1
+    end
+
+    echo -e "\e[1;34m[2/3] Restoring data to $MEDIA_DRIVE from Google Drive...\e[0m"
+    # Overlays absolute paths perfectly back into /Volumes/
+    restic restore latest --tag $RESTIC_TAG --host sunucu --target /
+
+    if is_docker_running
+        echo -e "\e[1;34m[3/3] Restarting media stack...\e[0m"
+        docker compose -f $COMPOSE_FILE start
+    else
+        echo -e "\e[1;33m[3/3] ⚠️ Docker daemon offline. Skipping container startup...\e[0m"
+    end
+
+    echo -e "\e[1;32mRestore complete! Your HFS+ mechanical drive is optimized and ready.\e[0m"
+    exit 0
+end
+
+{{ else -}}
+echo "This migration script is strictly for the macOS 'sunucu' environment."
+{{ end -}}

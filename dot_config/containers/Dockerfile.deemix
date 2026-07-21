@@ -1,0 +1,41 @@
+FROM docker.io/library/node:21-alpine AS builder
+
+ARG TARGETPLATFORM
+
+# Install build dependencies
+RUN apk add --no-cache git jq python3 make gcc musl-dev g++
+RUN git clone --recurse-submodules https://gitlab.com/RemixDev/deemix-gui.git /deemix-gui
+WORKDIR /deemix-gui
+
+# Ensure the compiler targets the correct architecture
+RUN case "$TARGETPLATFORM" in \
+        "linux/amd64") \
+            jq '.pkg.targets = ["node16-alpine-x64"]' ./server/package.json > tmp-json ;; \
+        "linux/arm64") \
+            jq '.pkg.targets = ["node16-alpine-arm64"]' ./server/package.json > tmp-json ;; \
+        *) \
+            jq '.pkg.targets = ["node16-alpine-x64"]' ./server/package.json > tmp-json ;; \
+    esac && mv tmp-json ./server/package.json
+
+RUN yarn install-all
+
+# Apply the Lidarr-on-Steroids patch to catch the API error
+RUN sed -i 's/const channelData = await dz.gw.get_page(channelName)/let channelData; try { channelData = await dz.gw.get_page(channelName); } catch (error) { console.error(`Caught error ${error}`); return [];}/' ./server/src/routes/api/get/newReleases.ts
+
+RUN yarn dist-server
+
+# Final lightweight image
+FROM alpine:latest
+RUN apk add --no-cache libstdc++ gcompat
+
+COPY --from=builder /deemix-gui/dist/deemix-server /deemix-server
+RUN chmod +x /deemix-server
+
+ENV DEEMIX_SINGLE_USER=true
+# Force configuration files to the /config mount
+ENV XDG_CONFIG_HOME=/
+
+EXPOSE 6595
+VOLUME ["/config", "/downloads"]
+
+CMD ["/deemix-server", "--server", "--port", "6595", "--host", "0.0.0.0"]

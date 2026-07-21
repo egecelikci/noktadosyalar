@@ -1,0 +1,9 @@
+set -x RESTIC_REPOSITORY 'rclone:Drive:restic'
+set -x RESTIC_PASSWORD '{{ (bitwardenSecrets .bitwarden.restic_password_id).value }}'
+
+set -x RCLONE_CONFIG_PASS '{{ (bitwardenSecrets .bitwarden.rclone_config_pass_id).value }}'
+
+set -x RCLONE_CONFIG_DRIVE_CLIENT_ID '{{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value }}'
+set -x RCLONE_CONFIG_DRIVE_CLIENT_SECRET '{{ (bitwardenSecrets .bitwarden.gdrive_client_secret_id).value }}'
+
+set -x CHEZMOI_GITHUB_ACCESS_TOKEN '{{ (bitwardenSecrets .bitwarden.github_pat_id).value }}'

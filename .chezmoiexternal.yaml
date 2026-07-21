@@ -1,0 +1,28 @@
+{{- $squaremap := gitHubLatestRelease "jpenilla/squaremap" -}}
+{{- $squaremapURL := "" -}}
+
+{{- range $squaremap.Assets -}}
+  {{- if and (contains "squaremap-paper" .Name) (hasSuffix ".jar" .Name) -}}
+    {{- $squaremapURL = .BrowserDownloadURL -}}
+  {{- end -}}
+{{- end -}}
+
+.local/share/navidrome/data/plugins/audiomuseai.ndp:
+  type: file
+  url: https://github.com/NeptuneHub/AudioMuse-AI-NV-plugin/releases/latest/download/audiomuseai.ndp
+  refreshPeriod: 24h
+
+.local/share/navidrome/data/plugins/listenbrainz-daily-playlist.ndp:
+  type: file
+  url: https://github.com/kgarner7/navidrome-listenbrainz-daily-playlist/releases/latest/download/listenbrainz-daily-playlist.ndp
+  refreshPeriod: 24h
+
+.local/share/navidrome/data/plugins/apple-music.ndp:
+  type: file
+  url: https://github.com/navidrome/apple-music-plugin/releases/latest/download/apple-music.ndp
+  refreshPeriod: 24h
+
+.local/share/minecraft/data/plugins/squaremap.jar:
+  type: file
+  url: "{{ $squaremapURL }}"
+  refreshPeriod: 168h

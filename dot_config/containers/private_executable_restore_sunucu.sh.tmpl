@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+# chezmoi template: dot_config/containers/executable_restore_sunucu.sh.tmpl
+
+{{ if eq .chezmoi.os "darwin" -}}
+export RESTIC_REPOSITORY="rclone:Drive:restic"
+export RESTIC_PASSWORD='{{ (bitwardenSecrets .bitwarden.restic_password_id).value }}'
+export RCLONE_CONFIG_PASS='{{ (bitwardenSecrets .bitwarden.rclone_config_pass_id).value }}'
+export RCLONE_CONFIG_DRIVE_CLIENT_ID='{{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value }}'
+export RCLONE_CONFIG_DRIVE_CLIENT_SECRET='{{ (bitwardenSecrets .bitwarden.gdrive_client_secret_id).value }}'
+
+echo "Initializing restore sequence from sunucu…"
+
+# Restore the latest snapshot tagged 'media-stack' strictly from 'sunucu'
+restic restore latest --host sunucu --tag media-stack --target /
+
+echo "XDG Data folders restored successfully. Ready to run 'docker compose up -d'"
+{{ end -}}

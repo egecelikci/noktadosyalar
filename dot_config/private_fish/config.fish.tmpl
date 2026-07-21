@@ -6,23 +6,26 @@ if type -q eza
     abbr --add -g ls 'eza --long --classify --all --header --git --no-user --tree --level 1'
 end
 
-if type -q bat
-    abbr --add -g cat 'bat'
+{{ if eq .chezmoi.os "darwin" -}}
+set -l bw_socket "$HOME/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock"
+if test -S $bw_socket
+    set -gx SSH_AUTH_SOCK $bw_socket
 end
 
-{{ if eq .chezmoi.os "darwin" }}
-set -gx SSH_AUTH_SOCK $HOME/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+if test -x /opt/homebrew/bin/brew
+    eval (/opt/homebrew/bin/brew shellenv)
+end
 
-eval "$(/opt/homebrew/bin/brew shellenv)"
+if test -x /usr/libexec/java_home
+    set -gx JAVA_HOME (/usr/libexec/java_home -v 17)
+end
 
-set -gx JAVA_HOME (/usr/libexec/java_home -v 17)
+test -e $HOME/.iterm2_shell_integration.fish; and source $HOME/.iterm2_shell_integration.fish
 
-test -e {$HOME}/.iterm2_shell_integration.fish ; and source {$HOME}/.iterm2_shell_integration.fish
-{{ end }}
-
-{{ if eq .chezmoi.os "linux" }}
-
-{{ end }}
+if test -f $HOME/.orbstack/shell/init2.fish
+    source $HOME/.orbstack/shell/init2.fish
+end
+{{ end -}}
 
 if status is-interactive
     if type -q zoxide

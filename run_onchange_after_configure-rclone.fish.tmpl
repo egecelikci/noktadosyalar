@@ -1,0 +1,20 @@
+#!/usr/bin/env fish
+
+# This hash ensures the script re-runs if your Bitwarden secrets change
+# secrets_hash: {{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value | sha256sum }}
+
+echo "Configuring Rclone remotes…"
+
+mkdir -p ~/.config/rclone
+
+# 1. Update the Google Drive remote (This preserves the token if it exists!)
+rclone config update Drive type drive \
+    client_id '{{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value }}' \
+    client_secret '{{ (bitwardenSecrets .bitwarden.gdrive_client_secret_id).value }}'
+
+# 2. Configure the static HTTP remotes
+rclone config update Myrient type http url "https://myrient.erista.me"
+rclone config update "The Eye" type http url "https://beta.the-eye.eu"
+rclone config update 8BitDo type http url "https://tempfiles.8bitdo.com/SPSP/"
+
+echo "Rclone configuration successfully synced!"

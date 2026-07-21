@@ -20,7 +20,7 @@
     smtpServerPort = 2525
     smtpEncryption = tls
     smtpUser = ege
-    smtpPass = {{ (bitwardenSecrets "f0a354fd-1e3d-4b74-a253-b469013ae086").value }}
+    smtpPass = {{ (bitwardenSecrets .bitwarden.smtp_password_id).value }}
     from = ege@celikci.me
     confirm = always
 

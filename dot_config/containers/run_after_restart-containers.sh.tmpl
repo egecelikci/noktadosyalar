@@ -1,0 +1,45 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+# chezmoi template: dot_config/containers/run_after_restart-containers.sh.tmpl
+
+# Define the OrbStack / Docker socket path
+DOCKER_SOCK="$HOME/.orbstack/run/docker.sock"
+
+# Check if the socket exists OR if the docker CLI can connect to a daemon
+if [ ! -S "$DOCKER_SOCK" ] && ! docker info >/dev/null 2>&1; then
+    echo "⚠️ OrbStack/Docker daemon is not running. Skipping media stack startup."
+    exit 0
+fi
+
+cd "$HOME/.config/containers"
+
+MEDIA_ROOT="{{ index .media_paths .chezmoi.os }}"
+
+# 1. Services that crash or create ghost mounts without the HDD
+HDD_SERVICES=(navidrome deemix slskd qbittorrent radarr sonarr audiomuse-ai-worker lrclib)
+
+# 2. Independent services that should always remain online
+CORE_SERVICES=(gluetun prowlarr audiomuse-redis audiomuse-postgres audiomuse-ai-flask caddy cloudflared archivebox arcane)
+
+if ! mount | grep -q "$MEDIA_ROOT"; then
+    echo "Hardware Warning: Media drive ($MEDIA_ROOT) is disconnected."
+
+    echo "Stopping HDD-dependent containers to prevent data corruption…"
+    docker compose stop "${HDD_SERVICES[@]}"
+
+    echo "Ensuring independent core services remain online…"
+    docker compose up -d "${CORE_SERVICES[@]}"
+
+    {{ if eq .chezmoi.os "darwin" -}}
+    # Clean up the ghost mount point macOS sometimes leaves behind
+    if [ -d "$MEDIA_ROOT" ]; then
+        sudo rmdir "$MEDIA_ROOT" 2>/dev/null
+    fi
+    {{- end }}
+
+    exit 0
+fi
+
+echo "Media drive detected. Starting full media stack…"
+docker compose up -d --remove-orphans

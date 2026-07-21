@@ -1,0 +1,46 @@
+bitwarden:
+  restic_password_id: "11479ea0-6123-44ea-8436-b46800f641c0"
+  rclone_config_pass_id: "0cf59961-a39b-4dc3-b620-b46800f65b1a"
+  gdrive_client_id_id: "650ba8c7-e988-4747-b193-b4680100473c"
+  gdrive_client_secret_id: "8555e00e-8c6e-4fb0-b4d5-b468010035b2"
+  cf_api_token_id: "3158ad0e-b861-4db5-a20c-b48701095405"
+  cf_tunnel_credentials_id: "5f0287c1-e9cd-447d-8404-b487012c930c"
+  cf_tunnel_token_id: "313fc1e2-f47b-41c7-8d63-b48701452095"
+  github_pat_id: "c3fb3c6b-7b0f-484e-a854-b48100dd0beb"
+
+  deezer_arl_id: "b830e3a5-cae9-4930-9817-b47a00da2410"
+  lastfm_apikey_id: "a5c2b4c4-3b18-48b1-9b66-b47900d08ecd"
+  lastfm_secret_id: "54fd9fd6-c20e-4773-913a-b47900d11b3d"
+  postgres_password_id: "4f47eced-0711-4d63-9b20-b47b000b5e01"
+  proton_wg_key_id: "16749777-7c84-45d1-92e0-b47a00dce89c"
+  gluetun_api_key_id: "86f44a59-02bc-42fd-a3ab-b484014b86bf"
+  slsk_password_id: "f196d713-8845-4a16-a24c-b47a00da4ea2"
+  slsk_username_id: "d90ab261-2cb7-429c-9b08-b47a00da3f0a"
+  spotify_id_id: "86561250-37e2-42fb-8220-b47900d24845"
+  spotify_secret_id: "00c8a0ce-c219-473b-9c87-b47900d239dd"
+  radarr_api_key_id: "9c15b1c4-d334-4a19-98b5-b4800160013c"
+  sonarr_api_key_id: "1cf5fb1e-964e-40ed-b929-b480015fe298"
+  playit_secret_key_id: "1ab2bd86-c1ae-4de4-9f75-b4810013e7d0"
+  slskd_api_key_id: "4a9a7cb2-df2c-4049-b605-b48100ce1d7b"
+  arcane_encryption_key_id: "e7361b25-9ae9-4d47-afb2-b481010d6ec3"
+  arcane_jwt_secret_id: "a9e426e1-59c5-4f23-987a-b481010d63ad"
+  pocketid_encryption_key_id: "5a1c622e-0f9d-4204-819f-b484006eb9c4"
+  pocketid_client_id_id: "35e8c7f4-8346-4eef-85f8-b484006eced5"
+  pocketid_client_secret_id: "e8a444b1-ed66-43fc-aa63-b484006ef9d1"
+  smtp_password_id: "f0a354fd-1e3d-4b74-a253-b469013ae086"
+
+  musicbrainz_password_id: "fa45b741-685c-4acb-9ef7-b47400f6afe5"
+  genius_api_key_id: "c8eec299-8cf0-4a33-b625-b47400f6e3a2"
+
+  atuin_username_id: "d6bf04ff-6b33-42cf-bfa6-b4690133b41c"
+  atuin_password_id: "a437d588-0207-43ec-ac98-b4690133bcef"
+  atuin_key_id: "7ac89edd-5144-4026-b20a-b4690133a6cc"
+
+  ssh_auth_key_android_id: "b5f725bb-d2a4-4599-88bd-b46901407fab"
+  ssh_sign_key_android_id: "fa824228-8192-4520-99e8-b46901407375"
+
+media_paths:
+  darwin: "/Volumes/Toshiba"
+  linux: "/mnt/storage"
+
+lrclib_dump_url: "https://db-dumps.lrclib.net/lrclib-db-dump-20260624T025818Z.sqlite3.gz"

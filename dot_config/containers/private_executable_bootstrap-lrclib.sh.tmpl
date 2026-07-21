@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+# chezmoi template: dot_config/containers/private_executable_bootstrap-lrclib.sh.tmpl
+
+MEDIA_ROOT="{{ index .media_paths .chezmoi.os }}"
+TARGET_DIR="$MEDIA_ROOT/lrclib/data"
+DOWNLOAD_URL="{{ .lrclib_dump_url }}"
+
+echo "Checking for lrclib database dump…"
+mkdir -p "$TARGET_DIR"
+
+if [ -f "$TARGET_DIR/lrclib.sqlite3" ]; then
+    echo "✅ lrclib.sqlite3 already exists. Skipping download."
+    exit 0
+fi
+
+echo "📥 Downloading dump from $DOWNLOAD_URL…"
+curl -L "$DOWNLOAD_URL" -o "$TARGET_DIR/lrclib-temp.sqlite3.gz"
+
+echo "📦 Extracting database archive to lrclib.sqlite3…"
+# Decompress the content directly into the exact filename the container expects
+gunzip -c "$TARGET_DIR/lrclib-temp.sqlite3.gz" > "$TARGET_DIR/lrclib.sqlite3"
+
+# Clean up the compressed archive
+rm "$TARGET_DIR/lrclib-temp.sqlite3.gz"
+
+echo "🚀 Database successfully bootstrapped!"
