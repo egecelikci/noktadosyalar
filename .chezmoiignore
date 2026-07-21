@@ -12,3 +12,7 @@
 
 # Team Fortress 2
 mastercomfig/
+
+{{ if ne .chezmoi.os "android" }}
+run_once_install-termux-backup.sh
+{{ end }}
