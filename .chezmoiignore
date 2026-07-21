@@ -1,12 +1,7 @@
 .config/rclone/rclone.conf
 .config/git/allowed_signers
 
-{{ if ne .chezmoi.os "android" }}
-.ssh/id_auth_ed25519
-.ssh/id_sign_ed25519
-{{ end }}
-
-{{ if ne .chezmoi.os "darwin" }}
+{{ if ne .chezmoi.os "linux" }}
 .config/containers/
 {{ end }}
 
