@@ -83,7 +83,7 @@ in
 
   networking.firewall.interfaces.docker0.allowedTCPPorts = [ 5432 6380 ];
 
-services.caddy = {
+  services.caddy = {
     enable = true;
 
     package = pkgs.caddy.withPlugins {
@@ -113,26 +113,95 @@ services.caddy = {
       }
     '';
 
-    virtualHosts = {
-      # Unprotected internal/core services
-      "id.${domain}".extraConfig        = "reverse_proxy 127.0.0.1:1411";
-      "auth.${domain}".extraConfig      = "reverse_proxy 127.0.0.1:3000";
-      "jellyfin.${domain}".extraConfig  = "reverse_proxy 127.0.0.1:8096";
-      "music.${domain}".extraConfig     = "reverse_proxy 127.0.0.1:4533";
-      "arcane.${domain}".extraConfig    = "reverse_proxy 127.0.0.1:3552";
+    virtualHosts."*.balcova.online" = {
+      extraConfig = ''
+        @id host id.balcova.online
+        handle @id {
+          reverse_proxy 127.0.0.1:1411
+        }
 
-      # Protected by TinyAuth SSO
-      "deemix.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:6595";
-      "slskd.${domain}".extraConfig     = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:5030";
-      "sonarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8989";
-      "radarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:7878";
-      "lidarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8686";
-      "bazarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:6767";
-      "prowlarr.${domain}".extraConfig  = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:9696";
-      "seerr.${domain}".extraConfig     = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:5055";
-      "qbit.${domain}".extraConfig      = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8080";
-      "archive.${domain}".extraConfig   = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8000";
-      "aurral.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:3001";
+        @auth host auth.balcova.online
+        handle @auth {
+          reverse_proxy 127.0.0.1:3000
+        }
+
+        @music host music.balcova.online
+        handle @music {
+          reverse_proxy 127.0.0.1:4533
+        }
+
+        @arcane host arcane.balcova.online
+        handle @arcane {
+          reverse_proxy 127.0.0.1:3552
+        }
+
+        # --- Protected Apps ---
+        @deemix host deemix.balcova.online
+        handle @deemix {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:6595
+        }
+
+        @slskd host slskd.balcova.online
+        handle @slskd {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:5030
+        }
+
+        @sonarr host sonarr.balcova.online
+        handle @sonarr {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:8989
+        }
+
+        @radarr host radarr.balcova.online
+        handle @radarr {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:7878
+        }
+
+        @lidarr host lidarr.balcova.online
+        handle @lidarr {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:8686
+        }
+
+        @bazarr host bazarr.balcova.online
+        handle @bazarr {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:6767
+        }
+
+        @prowlarr host prowlarr.balcova.online
+        handle @prowlarr {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:9696
+        }
+
+        @seerr host seerr.balcova.online
+        handle @seerr {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:5055
+        }
+
+        @qbit host qbit.balcova.online
+        handle @qbit {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:8080
+        }
+
+        @archive host archive.balcova.online
+        handle @archive {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:8000
+        }
+
+        @aurral host aurral.balcova.online
+        handle @aurral {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:3001
+        }
+      '';
     };
   };
   systemd.tmpfiles.rules = [
