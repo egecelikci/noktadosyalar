@@ -14,5 +14,5 @@
 mastercomfig/
 
 {{ if ne .chezmoi.os "android" }}
-run_once_install-termux-backup.sh
+install-termux-backup.sh.tmpl
 {{ end }}
