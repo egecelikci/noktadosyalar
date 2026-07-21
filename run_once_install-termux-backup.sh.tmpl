@@ -1,7 +1,7 @@
+{{ if eq .chezmoi.os "android" }}
 #!/bin/bash
 set -euo pipefail
 IFS=$'\n\t'
-{{ if eq .chezmoi.os "android" }}
 echo "Android environment detected. Bootstrapping restic backup…"
 
 # Fetch and execute the install script
