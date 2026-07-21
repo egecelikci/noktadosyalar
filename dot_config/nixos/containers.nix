@@ -38,14 +38,39 @@ in
     # ---- auth ----
     tinyauth = {
       image = "ghcr.io/tinyauthapp/tinyauth:v5";
-      environmentFiles = [ "/run/secrets/tinyauth.env" ];
+      environment = {
+        TINYAUTH_APPURL = "https://auth.${domain}";
+        TINYAUTH_OAUTH_AUTOREDIRECT = "pocketid";
+        TINYAUTH_OAUTH_PROVIDERS_POCKETID_AUTHURL = "https://id.${domain}/authorize";
+        TINYAUTH_OAUTH_PROVIDERS_POCKETID_TOKENURL = "http://pocket-id:1411/api/oidc/token";
+        TINYAUTH_OAUTH_PROVIDERS_POCKETID_USERINFOURL = "http://pocket-id:1411/api/oidc/userinfo";
+        TINYAUTH_OAUTH_PROVIDERS_POCKETID_REDIRECTURL = "https://auth.${domain}/api/oauth/callback/pocketid";
+        TINYAUTH_OAUTH_PROVIDERS_POCKETID_SCOPES = "openid email profile groups";
+        TINYAUTH_OAUTH_PROVIDERS_POCKETID_NAME = "Pocket ID";
+      };
+      # CLIENTID/CLIENTSECRET only - see dot_config/containers/secrets/private_tinyauth.env.tmpl
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/tinyauth.env" ];
       extraOptions = [ "--network=${net}" ];
     };
 
     pocket-id = {
       image = "pocketid/pocket-id:v2";
+      environment = {
+        APP_URL = "https://id.${domain}";
+        TRUST_PROXY = "true";
+        TRUSTED_PLATFORM = "CF-Connecting-IP";
+        SMTP_HOST = "mail.smtp2go.com";
+        SMTP_PORT = "2525";
+        SMTP_TLS = "starttls";
+        SMTP_FROM = "auth@${domain}";
+        SMTP_USER = "ege";
+        TZ = "Europe/Istanbul";
+        PUID = "1000";
+        PGID = "1000";
+      };
       volumes = [ "${homeDir}/.local/share/pocket-id/data:/app/data" ];
-      environmentFiles = [ "/run/secrets/pocket-id.env" ];
+      # ENCRYPTION_KEY/SMTP_PASSWORD only - see private_pocket-id.env.tmpl
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/pocket-id.env" ];
       extraOptions = [ "--network=${net}" ];
       dependsOn = [ ];
     };
@@ -93,7 +118,18 @@ in
     # (a) is the low-risk move - don't fix what isn't broken on this piece.
     gluetun = {
       image = "qmcgaw/gluetun:latest";
-      environmentFiles = [ "/run/secrets/gluetun.env" ];
+      environment = {
+        VPN_SERVICE_PROVIDER = "protonvpn";
+        VPN_TYPE = "wireguard";
+        VPN_PORT_FORWARDING = "on";
+        VPN_PORT_FORWARDING_PROVIDER = "protonvpn";
+        PORT_FORWARD_ONLY = "on";
+        SERVER_COUNTRIES = "Turkey";
+        HTTP_CONTROL_SERVER_ADDRESS = ":8000";
+        FIREWALL_INPUT_PORTS = "8080,5030";
+      };
+      # WIREGUARD_PRIVATE_KEY/HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE - see private_gluetun.env.tmpl
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/gluetun.env" ];
       extraOptions = [
         "--cap-add=NET_ADMIN"
         "--network=${net}"
@@ -109,38 +145,46 @@ in
         "${mediaRoot}/Music/Downloads/Soulseek:/downloads"
         "${mediaRoot}/Music/Library:/music:ro"
       ];
-      environmentFiles = [ "/run/secrets/slskd.env" ];
+      environment = {
+        SLSKD_NO_AUTH = "true";
+        SLSKD_DOWNLOADS_DIR = "/downloads";
+        SLSKD_REMOTE_CONFIGURATION = "true";
+        SLSKD_SHARED_DIR = "/music";
+        SLSKD_VPN = "true";
+        SLSKD_VPN_PORT_FORWARDING = "true";
+        SLSKD_VPN_GLUETUN_URL = "http://localhost:8000";
+      };
+      # SLSKD_SLSK_USERNAME/PASSWORD, SLSKD_VPN_GLUETUN_API_KEY, SLSKD_API_KEY - see private_slskd.env.tmpl
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/slskd.env" ];
     };
 
-    # ---- audiomuse-ai (workers only - db/redis now native, see native-services.nix) ----
     audiomuse-ai-flask = {
       image = "ghcr.io/neptunehub/audiomuse-ai:latest";
       environment = {
         SERVICE_TYPE = "flask";
-        POSTGRES_HOST = "host-gateway";
-        REDIS_URL = "redis://host-gateway:6380/0";
+        POSTGRES_HOST = "host.docker.internal";
+        POSTGRES_PORT = "5432";
+        POSTGRES_USER = "audiomuse";
+        POSTGRES_DB = "audiomuse";       # matches the renamed Nix database
+        REDIS_URL = "redis://host.docker.internal:6380/0";
       };
-      extraOptions = [ "--network=${net}" "--add-host=host-gateway:host-gateway" ];
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/audiomuse.env" ]; # POSTGRES_PASSWORD only
+      extraOptions = [ "--network=${net}" "--add-host=host.docker.internal:host-gateway" ];
     };
 
     audiomuse-ai-worker = {
       image = "ghcr.io/neptunehub/audiomuse-ai:latest";
       environment = {
         SERVICE_TYPE = "worker";
-        POSTGRES_HOST = "host-gateway";
-        REDIS_URL = "redis://host-gateway:6380/0";
+        POSTGRES_HOST = "host.docker.internal";
+        POSTGRES_PORT = "5432";
+        POSTGRES_USER = "audiomuse";
+        POSTGRES_DB = "audiomuse";
+        REDIS_URL = "redis://host.docker.internal:6380/0";
       };
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/audiomuse.env" ];
       volumes = [ "${mediaRoot}/Music/Library:/music:ro" ];
-      extraOptions = [ "--network=${net}" "--add-host=host-gateway:host-gateway" ];
-    };
-
-    # ---- unpackaged apps, kept as-is ----
-    seerr = {
-      image = "ghcr.io/seerr-team/seerr:latest";
-      environment = { TZ = "Europe/Istanbul"; PORT = "5055"; };
-      volumes = [ "${homeDir}/.config/seerr:/app/config" ];
-      extraOptions = [ "--network=${net}" ];
-      # Only run this OR services.jellyseerr, not both - decide which fork you want.
+      extraOptions = [ "--network=${net}" "--add-host=host.docker.internal:host-gateway" ];
     };
 
     archivebox = {
@@ -170,7 +214,9 @@ in
 
     arcane = {
       image = "ghcr.io/getarcaneapp/manager:latest";
-      environmentFiles = [ "/run/secrets/arcane.env" ];
+      environment.TZ = "Europe/Istanbul";
+      # ENCRYPTION_KEY/JWT_SECRET only - see private_arcane.env.tmpl
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/arcane.env" ];
       volumes = [
         "/var/run/docker.sock:/var/run/docker.sock"
         "${homeDir}/.local/share/arcane/data:/app/data"
@@ -204,7 +250,16 @@ in
       image = "ghcr.io/playit-cloud/playit-agent:0.17";
       dependsOn = [ "minecraft" ];
       extraOptions = [ "--network=container:minecraft" ];
-      environmentFiles = [ "/run/secrets/playit.env" ];
+      # SECRET_KEY only - see private_playit.env.tmpl
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/playit.env" ];
+    };
+
+    recyclarr = {
+      image = "ghcr.io/recyclarr/recyclarr:8";
+      user = "1000:1000";
+      volumes = [ "${homeDir}/.config/recyclarr:/config" ];
+      environmentFiles = [ "${homeDir}/.config/containers/.env" ];
+      extraOptions = [ "--network=${net}" ];
     };
 
   };

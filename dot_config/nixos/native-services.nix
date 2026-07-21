@@ -17,6 +17,7 @@ let
   domain    = "balcova.online";
   # CHANGE: point this at wherever the media pool is mounted on the new box.
   mediaRoot = "/mnt/media";
+  homeDir   = "/home/egecelikci"; # CHANGE if the new user/home differs - matches containers.nix
   mediaUser = "media";
   mediaGroup = "media";
 in
@@ -52,10 +53,8 @@ in
     };
   };
   # LastFM key/secret are secrets, not settings -> inject via env file
-  systemd.services.navidrome.serviceConfig.EnvironmentFile = "/run/secrets/navidrome.env";
-  # navidrome.env should contain:
-  #   ND_LASTFM_APIKEY=...
-  #   ND_LASTFM_SECRET=...
+  systemd.services.navidrome.serviceConfig.EnvironmentFile = "${homeDir}/.config/navidrome/navidrome.env";
+  # navidrome.env is chezmoi-managed - see dot_config/navidrome/private_navidrome.env.tmpl
 
   # ---- *arr stack [ASSUMED - long-standing modules] ----
   services.prowlarr.enable = true;
@@ -87,43 +86,40 @@ in
     # openFirewall = false; # not exposed publicly in the original stack either
   };
 
-  # ---- recyclarr [VERIFIED] ----
-  services.recyclarr = {
-    enable = true;
-    # Point at your existing chezmoi-managed configs/radarr.yml + sonarr.yml,
-    # or convert to configuration = { ... } as a Nix attrset instead.
-    configFile = /etc/nixos/media-stack/recyclarr.yml;
-  };
-
   # ---- jellyseerr [VERIFIED] ----
   # Careful: the compose file used "seerr" (ghcr.io/seerr-team/seerr), a different
   # fork from jellyseerr. jellyseerr is the one with a nixpkgs module; seerr is not
   # packaged. Decide if jellyseerr is an acceptable substitute or keep seerr as a
   # container (see containers.nix).
-  services.jellyseerr = {
+  services.seerr = {
     enable = true;
     port = 5055;
     openFirewall = false;
   };
 
-  # ---- postgres + redis for audiomuse-ai [obviously native, no doubt here] ----
   services.postgresql = {
     enable = true;
-    ensureDatabases = [ "audiomusedb" ];
+    enableTCPIP = true;
+    ensureDatabases = [ "audiomuse" ];
     ensureUsers = [{
       name = "audiomuse";
       ensureDBOwnership = true;
     }];
+    authentication = ''
+      host  audiomuse  audiomuse  172.16.0.0/12  scram-sha-256
+    '';
   };
-  # password for the audiomuse role still needs to be set once via:
+  # ensureUsers never sets a password — do it once:
   #   sudo -u postgres psql -c "ALTER ROLE audiomuse WITH PASSWORD '...';"
-  # (ensureUsers doesn't set passwords - pull from vault/secrets manager)
 
   services.redis.servers.audiomuse = {
     enable = true;
     port = 6380;
-    bind = "127.0.0.1";
+    bind = "0.0.0.0"; # 127.0.0.1 is unreachable from the docker network — see below
+    settings.requirepass = "..."; # pull from the same secret as postgres
   };
+
+  networking.firewall.interfaces.docker0.allowedTCPPorts = [ 5432 6380 ];
 
   # ---- minecraft [ASSUMED, module exists] ----
   # The compose file uses itzg/minecraft-server with TYPE=PAPER and auto-downloads
@@ -134,10 +130,16 @@ in
   # See containers.nix.
 
   # ---- cloudflared [VERIFIED: services.cloudflared exists] ----
+  # credentialsFile needs a real locally-managed tunnel credentials JSON, not
+  # the CLOUDFLARE_TUNNEL_TOKEN the old compose stack ran with (that's the
+  # remotely-managed/dashboard mode, a different auth path entirely). The
+  # right secret was already sitting unused in .chezmoidata.yaml as
+  # cf_tunnel_credentials_id - templated now, see
+  # dot_config/cloudflared/private_tunnel-credentials.json.tmpl.
   services.cloudflared = {
     enable = true;
     tunnels."d088e974-c28b-419c-be94-148215f30b69" = {
-      credentialsFile = "/run/secrets/cloudflare-tunnel.json";
+      credentialsFile = "${homeDir}/.config/cloudflared/tunnel-credentials.json";
       default = "http_status:404";
       ingress = {
         "*.${domain}" = "http://localhost:80"; # hand straight to Caddy
