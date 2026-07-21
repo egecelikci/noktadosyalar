@@ -1,3 +1,5 @@
 {{- if eq .chezmoi.os "android" -}}
 {{ (bitwardenSecrets "fa824228-8192-4520-99e8-b46901407375").value }}
+{{- else if eq .chezmoi.os "linux" -}}
+{{ (bitwardenSecrets "5aa7e889-b302-49e5-932c-b48e00add04a").value }}
 {{- end -}}

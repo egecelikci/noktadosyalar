@@ -2,4 +2,6 @@
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPaYomkrkg+WhBBuHrrPqCxqB2GRhqmLt5DJzQkjwalD
 {{- else if eq .chezmoi.os "android" -}}
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOLDNi3uml+sIXth4B9rQslnqW3gc+yi6HesuveBisVs
+{{- else if eq .chezmoi.os "linux" -}}
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHGJ3iPNPzCSddajaXFK/eEGd/uuzzTD0W0e8JB+L0aI
 {{- end -}}
