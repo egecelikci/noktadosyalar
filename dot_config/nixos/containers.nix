@@ -35,6 +35,13 @@ in
 
   virtualisation.oci-containers.containers = {
 
+    cloudflared = {
+      image = "cloudflare/cloudflared:latest";
+      cmd = [ "tunnel" "run" ];
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/cloudflared.env" ];
+      extraOptions = [ "--network=${net}" ];
+    };
+
     # ---- auth ----
     tinyauth = {
       image = "ghcr.io/tinyauthapp/tinyauth:v5";

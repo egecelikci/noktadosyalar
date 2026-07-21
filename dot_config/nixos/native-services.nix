@@ -129,6 +129,7 @@ in
   # a container rather than fighting the native module for marginal benefit.
   # See containers.nix.
 
+<<<<<<< Updated upstream
   # ---- cloudflared [VERIFIED: services.cloudflared exists] ----
   # credentialsFile needs a real locally-managed tunnel credentials JSON, not
   # the CLOUDFLARE_TUNNEL_TOKEN the old compose stack ran with (that's the
@@ -147,6 +148,12 @@ in
     };
   };
 
+=======
+  # ---- Caddy [obviously native] ----
+  # The original stack used the caddy-docker-proxy plugin to auto-generate routes
+  # from container labels. Going native means writing the routes explicitly - more
+  # verbose, but it's one file instead of scattered labels, and it's easier to audit.
+>>>>>>> Stashed changes
   services.caddy = {
     enable = true;
     extraConfig = ''
