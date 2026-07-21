@@ -2,7 +2,7 @@
 
 {
   fileSystems."/mnt/media" = {
-    device = "/dev/disk/by-uuid/9421d165-b07b-43a3-897c-07ff63adbb15";
+    device = "/dev/disk/by-uuid/ce0ecdba-85d4-472b-a123-f636f73a8098";
     fsType = "btrfs";
     options = [ "compress=zstd" "noatime" "nofail" ];
   };
