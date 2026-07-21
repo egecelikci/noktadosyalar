@@ -1,0 +1,22 @@
+{{- if eq .chezmoi.os "darwin" -}}
+Include ~/.orbstack/ssh/config
+
+Include /Users/egecelikci/.colima/ssh_config
+
+Host codeberg.org
+  IdentityAgent /Users/egecelikci/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+  IdentitiesOnly yes
+  IdentityFile /Users/egecelikci/.ssh/pc_auth.pub
+
+Host git.sr.ht
+  IdentityAgent /Users/egecelikci/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+  IdentitiesOnly yes
+  IdentityFile /Users/egecelikci/.ssh/pc_auth.pub
+
+{{- else if eq .chezmoi.os "linux" -}}
+Host codeberg.org
+  IdentityFile ~/.ssh/id_auth_ed25519
+
+Host git.sr.ht
+  IdentityFile ~/.ssh/id_auth_ed25519
+{{- end -}}
