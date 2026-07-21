@@ -51,6 +51,7 @@ in
       # CLIENTID/CLIENTSECRET only - see dot_config/containers/secrets/private_tinyauth.env.tmpl
       environmentFiles = [ "${homeDir}/.config/containers/secrets/tinyauth.env" ];
       extraOptions = [ "--network=${net}" ];
+      ports = [ "127.0.0.1:3000:3000" ];
     };
 
     pocket-id = {
@@ -73,6 +74,7 @@ in
       environmentFiles = [ "${homeDir}/.config/containers/secrets/pocket-id.env" ];
       extraOptions = [ "--network=${net}" ];
       dependsOn = [ ];
+      ports = [ "127.0.0.1:1411:1411" ];
     };
 
     # ---- music download/library pipeline ----
@@ -91,6 +93,7 @@ in
       ];
       environment.DEEMIX_SINGLE_USER = "true";
       extraOptions = [ "--network=${net}" ];
+      ports = [ "127.0.0.1:6595:6595" ];
     };
 
     lrclib = {
@@ -134,6 +137,7 @@ in
         "--cap-add=NET_ADMIN"
         "--network=${net}"
       ];
+      ports = [ "127.0.0.1:5030:5030" ];
     };
 
     slskd = {
@@ -197,6 +201,7 @@ in
         MEDIA_MAX_SIZE = "5000m";
       };
       extraOptions = [ "--network=${net}" "--shm-size=1gb" ];
+      ports = [ "127.0.0.1:8000:8000" ];
     };
 
     aurral = {
@@ -210,6 +215,7 @@ in
         "${homeDir}/.config/aurral/data:/app/backend/data"
       ];
       extraOptions = [ "--network=${net}" ];
+      ports = [ "127.0.0.1:3001:3001" ];
     };
 
     arcane = {
@@ -222,6 +228,7 @@ in
         "${homeDir}/.local/share/arcane/data:/app/data"
       ];
       extraOptions = [ "--network=${net}" "--cgroupns=host" ];
+      ports = [ "127.0.0.1:3552:3552" ];
     };
 
     autoheal = {

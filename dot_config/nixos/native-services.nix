@@ -147,24 +147,37 @@ in
     };
   };
 
-  # ---- Caddy [obviously native] ----
-  # The original stack used the caddy-docker-proxy plugin to auto-generate routes
-  # from container labels. Going native means writing the routes explicitly - more
-  # verbose, but it's one file instead of scattered labels, and it's easier to audit.
   services.caddy = {
     enable = true;
+    extraConfig = ''
+      (tinyauth_forwarder) {
+        forward_auth 127.0.0.1:3000 {
+          uri /api/auth/caddy
+          copy_headers Remote-User Remote-Name Remote-Email Remote-Groups
+          header_up X-Forwarded-Proto https
+        }
+      }
+    '';
     virtualHosts = {
+      # Unprotected internal/core services
+      "id.${domain}".extraConfig        = "reverse_proxy 127.0.0.1:1411";
+      "auth.${domain}".extraConfig      = "reverse_proxy 127.0.0.1:3000";
       "jellyfin.${domain}".extraConfig  = "reverse_proxy 127.0.0.1:8096";
       "music.${domain}".extraConfig     = "reverse_proxy 127.0.0.1:4533";
-      "sonarr.${domain}".extraConfig    = "reverse_proxy 127.0.0.1:8989";
-      "radarr.${domain}".extraConfig    = "reverse_proxy 127.0.0.1:7878";
-      "lidarr.${domain}".extraConfig    = "reverse_proxy 127.0.0.1:8686";
-      "bazarr.${domain}".extraConfig    = "reverse_proxy 127.0.0.1:6767";
-      "prowlarr.${domain}".extraConfig  = "reverse_proxy 127.0.0.1:9696";
-      "seerr.${domain}".extraConfig     = "reverse_proxy 127.0.0.1:5055";
-      "qbit.${domain}".extraConfig      = "reverse_proxy 127.0.0.1:8080";
-      # remaining hosts (auth, id, deemix, slskd, archive, aurral, arcane, lrclib)
-      # point at container ports - see containers.nix for those port numbers.
+      "arcane.${domain}".extraConfig    = "reverse_proxy 127.0.0.1:3552";
+
+      # Protected by TinyAuth SSO
+      "deemix.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:6595";
+      "slskd.${domain}".extraConfig     = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:5030";
+      "sonarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8989";
+      "radarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:7878";
+      "lidarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8686";
+      "bazarr.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:6767";
+      "prowlarr.${domain}".extraConfig  = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:9696";
+      "seerr.${domain}".extraConfig     = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:5055";
+      "qbit.${domain}".extraConfig      = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8080";
+      "archive.${domain}".extraConfig   = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:8000";
+      "aurral.${domain}".extraConfig    = "import tinyauth_forwarder\nreverse_proxy 127.0.0.1:3001";
     };
   };
 
