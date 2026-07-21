@@ -15,14 +15,30 @@ docker compose -f "$HOME/.config/containers/docker-compose.yaml" stop
 
 # Define the exact paths to back up (keeps the backup lean by avoiding caches)
 BACKUP_TARGETS=(
-    "$HOME/.config/deemix"
-    "$HOME/.config/slskd"
+    # Downloaders & Trackers
     "$HOME/.config/qbittorrent"
+    "$HOME/.config/slskd"
+    "$HOME/.config/deemix"
+
+    # Arr Stack
     "$HOME/.config/prowlarr"
     "$HOME/.config/radarr"
-    "$HOME/.local/share/audiomuse"
-    "$HOME/.local/share/lrclib"
+    "$HOME/.config/sonarr"
+    "$HOME/.config/lidarr"
+    "$HOME/.config/bazarr"
+    "$HOME/.config/recyclarr"
+
+    # Media & Requests
+    "$HOME/.config/jellyfin"
+    "$HOME/.config/seerr"
     "$HOME/.local/share/navidrome"
+    "$HOME/.local/share/audiomuse"
+
+    # Services & Extras
+    "$HOME/.local/share/pocket-id"
+    "$HOME/.config/aurral"
+    "$HOME/.local/share/archivebox"
+    "$HOME/.local/share/arcane"
 )
 
 echo "Running Restic backup for sunucu XDG data…"
