@@ -17,7 +17,7 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # networking.hostName = "nixos"; # Define your hostname.
+  networking.hostName = "sunucu"; # keep the restic --host tag continuous with the retired macOS box
 
   # Configure network connections interactively with nmcli or nmtui.
   networking.networkmanager.enable = true;
