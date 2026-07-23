@@ -81,7 +81,7 @@ for app in "${!NATIVE_MAP[@]}"; do
     sudo rsync -a "$src"/ "$dst"/
     sudo chown -R media:media "$dst"
   else
-    echo "  WARNING: nothing restored for $app, check the path/snapshot"
+    echo "SKIP: $APP not present in snapshot (expected if backup predates migration)"
   fi
 done
 
@@ -98,7 +98,7 @@ for app in "${!DOCKER_MAP[@]}"; do
     mkdir -p "$dst"
     rsync -a "$src"/ "$dst"/
   else
-    echo "  WARNING: nothing restored for $app, check the path/snapshot"
+    echo "SKIP: $APP not present in snapshot (expected if backup predates migration)"
   fi
 done
 sudo chown -R "egecelikci:$(id -gn egecelikci)" "$NIXOS_HOME/.config" "$NIXOS_HOME/.local/share"
