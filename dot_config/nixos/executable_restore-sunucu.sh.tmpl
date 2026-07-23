@@ -1,0 +1,94 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+# chezmoi template: dot_config/nixos/executable_restore-sunucu.sh.tmpl
+#
+# One-time restore of the macOS 'sunucu' restic snapshot onto this box.
+# Deliberately NOT run_once_: this stops real services and overwrites
+# real data directories, so it only runs when invoked by hand, after
+# `nixos-rebuild switch` has already created the service users/groups
+# and empty state dirs, and before those services have written anything
+# new of their own.
+
+{{ if eq .chezmoi.os "linux" -}}
+export RESTIC_REPOSITORY="rclone:Drive:restic"
+export RESTIC_PASSWORD='{{ (bitwardenSecrets .bitwarden.restic_password_id).value }}'
+export RCLONE_CONFIG_PASS='{{ (bitwardenSecrets .bitwarden.rclone_config_pass_id).value }}'
+export RCLONE_CONFIG_DRIVE_CLIENT_ID='{{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value }}'
+export RCLONE_CONFIG_DRIVE_CLIENT_SECRET='{{ (bitwardenSecrets .bitwarden.gdrive_client_secret_id).value }}'
+
+SNAPSHOT_HOST="sunucu"
+SCRATCH="$(mktemp -d /tmp/restic-restore.XXXXXX)"
+trap 'rm -rf "$SCRATCH"' EXIT
+
+# Apps that moved to native NixOS modules (native-services.nix). Docker on
+# macOS bind-mounted these flat under ~/.config/<app> (linuxserver-style
+# /config layout); the native .NET arr apps want that content one level
+# deeper, under /var/lib/<svc>/.config/<PascalCaseName>. bazarr/prowlarr/
+# jellyfin/seerr/qbittorrent/navidrome stay flat at /var/lib/<svc>.
+#
+# VERIFY before running: bazarr has no dataDir option upstream (check
+# `systemctl cat bazarr` on this box for the real path), and confirm
+# "seerr" is actually your module's state-dir name.
+declare -A NATIVE_MAP=(
+  [radarr]="home/egecelikci/.config/radarr|/var/lib/radarr/.config/Radarr"
+  [sonarr]="home/egecelikci/.config/sonarr|/var/lib/sonarr/.config/Sonarr"
+  [lidarr]="home/egecelikci/.config/lidarr|/var/lib/lidarr/.config/Lidarr"
+  [bazarr]="home/egecelikci/.config/bazarr|/var/lib/bazarr"
+  [prowlarr]="home/egecelikci/.config/prowlarr|/var/lib/prowlarr"
+  [jellyfin]="home/egecelikci/.config/jellyfin|/var/lib/jellyfin"
+  [seerr]="home/egecelikci/.config/seerr|/var/lib/seerr"
+  [qbittorrent]="home/egecelikci/.config/qbittorrent|/var/lib/qbittorrent"
+  [navidrome]="home/egecelikci/.local/share/navidrome|/var/lib/navidrome"
+)
+
+# Still on virtualisation.oci-containers (containers.nix) — same $HOME
+# layout as the old macOS compose stack, so these restore straight back.
+DOCKER_INCLUDES=(
+  "/home/egecelikci/.config/deemix"
+  "/home/egecelikci/.config/slskd"
+  "/home/egecelikci/.config/recyclarr"
+  "/home/egecelikci/.config/aurral"
+  "/home/egecelikci/.local/share/pocket-id"
+  "/home/egecelikci/.local/share/archivebox"
+  "/home/egecelikci/.local/share/arcane"
+)
+
+echo "Stopping native services…"
+sudo systemctl stop "${!NATIVE_MAP[@]}" || true
+
+echo "Restoring native-service paths into $SCRATCH…"
+include_args=()
+for app in "${!NATIVE_MAP[@]}"; do
+  include_args+=(--include "/${NATIVE_MAP[$app]%%|*}")
+done
+restic restore latest --host "$SNAPSHOT_HOST" --target "$SCRATCH" "${include_args[@]}"
+
+for app in "${!NATIVE_MAP[@]}"; do
+  src="$SCRATCH/${NATIVE_MAP[$app]%%|*}"
+  dst="${NATIVE_MAP[$app]##*|}"
+  if [ -d "$src" ]; then
+    echo "  $app -> $dst"
+    sudo mkdir -p "$dst"
+    sudo rsync -a "$src"/ "$dst"/
+    sudo chown -R media:media "$dst"
+  else
+    echo "  WARNING: nothing restored for $app, check the path/snapshot"
+  fi
+done
+
+echo "Restarting native services…"
+sudo systemctl start "${!NATIVE_MAP[@]}"
+
+echo "Restoring unchanged Docker appdata paths…"
+docker_include_args=()
+for p in "${DOCKER_INCLUDES[@]}"; do
+  docker_include_args+=(--include "$p")
+done
+restic restore latest --host "$SNAPSHOT_HOST" --target / "${docker_include_args[@]}"
+sudo chown -R egecelikci:egecelikci /home/egecelikci/.config /home/egecelikci/.local/share
+
+echo "Done. Diff the restored configs against native-services.nix/containers.nix before trusting them."
+{{ else -}}
+echo "This restore script is strictly for the NixOS 'sunucu' migration target."
+{{ end -}}
