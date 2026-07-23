@@ -40,7 +40,6 @@ bitwarden:
   ssh_sign_key_android_id: "fa824228-8192-4520-99e8-b46901407375"
 
 media_paths:
-  darwin: "/Volumes/Toshiba"
   linux: "/mnt/storage"
 
 lrclib_dump_url: "https://db-dumps.lrclib.net/lrclib-db-dump-20260624T025818Z.sqlite3.gz"
