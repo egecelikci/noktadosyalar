@@ -43,7 +43,7 @@ declare -A NATIVE_MAP=(
   [jellyfin]="$MAC_HOME/.config/jellyfin|/var/lib/jellyfin"
   [seerr]="$MAC_HOME/.config/seerr|/var/lib/seerr"
   [qbittorrent]="$MAC_HOME/.config/qbittorrent|/var/lib/qbittorrent"
-  [navidrome]="$MAC_HOME/.local/share/navidrome|/var/lib/navidrome"
+  [navidrome]="$MAC_HOME/.local/share/navidrome/data|/var/lib/navidrome"
 )
 
 # Still on virtualisation.oci-containers (containers.nix), same relative
@@ -81,7 +81,7 @@ for app in "${!NATIVE_MAP[@]}"; do
     sudo rsync -a "$src"/ "$dst"/
     sudo chown -R media:media "$dst"
   else
-    echo "SKIP: $APP not present in snapshot (expected if backup predates migration)"
+    echo "SKIP: $app not present in snapshot (expected if backup predates migration)"
   fi
 done
 
@@ -98,7 +98,7 @@ for app in "${!DOCKER_MAP[@]}"; do
     mkdir -p "$dst"
     rsync -a "$src"/ "$dst"/
   else
-    echo "SKIP: $APP not present in snapshot (expected if backup predates migration)"
+    echo "SKIP: $app not present in snapshot (expected if backup predates migration)"
   fi
 done
 sudo chown -R "egecelikci:$(id -gn egecelikci)" "$NIXOS_HOME/.config" "$NIXOS_HOME/.local/share"
