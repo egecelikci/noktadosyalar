@@ -34,6 +34,7 @@ in
       EnableSharing = true;
       Agents = "audiomuseai,listenbrainz,apple-music,deezer";
       Scanner.ScanSchedule = "@every 1h";
+      "Plugins.Folder" = "/var/lib/navidrome/plugins";
     };
   };
   systemd.services.navidrome.serviceConfig.EnvironmentFile = "${homeDir}/.config/navidrome/navidrome.env";
