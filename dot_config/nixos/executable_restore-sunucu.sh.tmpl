@@ -101,7 +101,7 @@ for app in "${!DOCKER_MAP[@]}"; do
     echo "  WARNING: nothing restored for $app, check the path/snapshot"
   fi
 done
-sudo chown -R egecelikci:egecelikci "$NIXOS_HOME/.config" "$NIXOS_HOME/.local/share"
+sudo chown -R "egecelikci:$(id -gn egecelikci)" "$NIXOS_HOME/.config" "$NIXOS_HOME/.local/share"
 
 echo "Done. Diff the restored configs against native-services.nix/containers.nix before trusting them."
 {{ else -}}
