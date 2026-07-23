@@ -191,6 +191,12 @@ in
           reverse_proxy 127.0.0.1:8080
         }
 
+        @jellyfin host jellyfin.balcova.online
+        handle @jellyfin {
+          import tinyauth_forwarder
+          reverse_proxy 127.0.0.1:8096
+        }
+
         @archive host archive.balcova.online
         handle @archive {
           import tinyauth_forwarder
