@@ -141,7 +141,6 @@ in
 
     globalConfig = ''
       email ege@celikci.me
-      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       servers {
           protocols h1 h2
       }
