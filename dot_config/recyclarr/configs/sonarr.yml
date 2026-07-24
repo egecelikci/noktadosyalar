@@ -1,36 +1,37 @@
 # yaml-language-server: $schema=https://schemas.recyclarr.dev/v8/config-schema.json
 sonarr:
   sonarr-main:
-    base_url: http://sonarr:8989
+    base_url: http://172.17.0.1:8989
     api_key: !env_var SONARR_API_KEY
 
-    # Use 'series' as the master file size definition
+
     quality_definition:
       type: series
 
     quality_profiles:
-      # ─────────────────────────────────────────────────────────────────
-      # PROFILE 1: Standard TV (South Park, Rick and Morty, etc.)
-      # ─────────────────────────────────────────────────────────────────
       - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
         reset_unmatched_scores:
           enabled: true
-        custom_format_groups:
-          add:
-            - trash_id: 158188097a58d7687dee647e04af0da3 # [Optional] Golden Rule HD
-              select:
-                - 47435ece6b99a0b477caf360e79ba0bb # x265 (HD)
-            - trash_id: 59c3af66780d08332fdc64e68297098f # [Unwanted] Unwanted Formats
 
-      # ─────────────────────────────────────────────────────────────────
-      # PROFILE 2: Anime (Monster, etc.)
-      # ─────────────────────────────────────────────────────────────────
       - trash_id: 20e0fc959f1f1704bed501f23bdae76f # [Anime] Remux-1080p
         reset_unmatched_scores:
           enabled: true
-        custom_format_groups:
-          add:
-            - trash_id: f206572b1147d0221bb1c96765b349e8 # [Release Groups] Anime
-            - trash_id: f54985e5e96747cef58731f1cf4c9181 # [Streaming Services] Anime
-            - trash_id: 4d3dc16c3ab3adc640afb8d6e3dc2266 # [Optional] Anime Optional
-            - trash_id: 59c3af66780d08332fdc64e68297098f # [Unwanted] Unwanted Formats
+
+    custom_formats:
+      - trash_ids:
+          - 158188097a58d7687dee647e04af0da3 # [Optional] Golden Rule HD
+        assign_scores_to:
+          - name: WEB-1080p
+            score: 0
+
+      - trash_ids:
+          - 47435ece6b99a0b477caf360e79ba0bb # x265 (HD)
+        assign_scores_to:
+          - name: WEB-1080p
+            score: 0
+
+      - trash_ids:
+          - 59c3af66780d08332fdc64e68297098f # [Unwanted] Unwanted Formats
+        assign_scores_to:
+          - name: WEB-1080p
+            score: -10000
