@@ -61,7 +61,6 @@ in
         VPN_PORT_FORWARDING = "on";
         VPN_PORT_FORWARDING_PROVIDER = "protonvpn";
         PORT_FORWARD_ONLY = "on";
-        SERVER_COUNTRIES = "Turkey";
         HTTP_CONTROL_SERVER_ADDRESS = ":8000";
         FIREWALL_INPUT_PORTS = "8080,5030";
       };
