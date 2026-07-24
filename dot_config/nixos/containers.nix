@@ -41,17 +41,17 @@ in
       ports = [ "127.0.0.1:6595:6595" ];
     };
 
-    lrclib = {
-      image = "local/lrclib:latest";
-      volumes = [ "${mediaRoot}/lrclib/data:/data" ];
-      ports = [ "3300:3300" ];
-      environment = {
-        LRCLIB_LOG = "info";
-        LRCLIB_MMAP_SIZE = "2000000000";
-        LRCLIB_CACHE_SIZE = "-64000";
-      };
-      extraOptions = [ "--network=${net}" ];
-    };
+    # lrclib = {
+    #   image = "local/lrclib:latest";
+    #   volumes = [ "${mediaRoot}/lrclib/data:/data" ];
+    #   ports = [ "3300:3300" ];
+    #   environment = {
+    #     LRCLIB_LOG = "info";
+    #     LRCLIB_MMAP_SIZE = "2000000000";
+    #     LRCLIB_CACHE_SIZE = "-64000";
+    #   };
+    #   extraOptions = [ "--network=${net}" ];
+    # };
 
     gluetun = {
       image = "qmcgaw/gluetun:latest";

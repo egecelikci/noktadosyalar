@@ -27,8 +27,15 @@
   # Configure network connections interactively with nmcli or nmtui.
   networking.networkmanager.enable = true;
 
-  # Set your time zone.
-  # time.timeZone = "Europe/Amsterdam";
+  networking.interfaces.enp42s0.ipv4.addresses = [ {
+    address = "192.168.1.20";
+    prefixLength = 24;
+  } ];
+
+  networking.defaultGateway = "192.168.1.1";
+  networking.nameservers = [ "192.168.1.1" "1.1.1.1" ];
+
+  time.timeZone = "Europe/Istanbul";
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
@@ -129,7 +136,7 @@
   # services.openssh.enable = true;
 
   # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
+  networking.firewall.allowedTCPPorts = [ 80 443 ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;

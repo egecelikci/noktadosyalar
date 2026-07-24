@@ -11,6 +11,83 @@ let
   homeDir = "/home/egecelikci";
   mediaUser = "media";
   mediaGroup = "media";
+
+  caddyRoutes = ''
+    @id host id.balcova.online
+            handle @id {
+              reverse_proxy 127.0.0.1:1411
+            }
+
+            @auth host auth.balcova.online
+            handle @auth {
+              reverse_proxy 127.0.0.1:3000
+            }
+
+            @music host music.balcova.online
+            handle @music {
+              reverse_proxy 127.0.0.1:4533
+            }
+
+            # --- Protected Apps ---
+            @deemix host deemix.balcova.online
+            handle @deemix {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:6595
+            }
+
+            @slskd host slskd.balcova.online
+            handle @slskd {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:5030
+            }
+
+            @sonarr host sonarr.balcova.online
+            handle @sonarr {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:8989
+            }
+
+            @radarr host radarr.balcova.online
+            handle @radarr {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:7878
+            }
+
+            @lidarr host lidarr.balcova.online
+            handle @lidarr {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:8686
+            }
+
+            @bazarr host bazarr.balcova.online
+            handle @bazarr {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:6767
+            }
+
+            @prowlarr host prowlarr.balcova.online
+            handle @prowlarr {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:9696
+            }
+
+            @seerr host seerr.balcova.online
+            handle @seerr {
+              reverse_proxy 127.0.0.1:5055
+            }
+
+            @qbit host qbit.balcova.online
+            handle @qbit {
+              import tinyauth_forwarder
+              reverse_proxy 127.0.0.1:8080
+            }
+
+            @jellyfin host jellyfin.balcova.online
+            handle @jellyfin {
+              reverse_proxy 127.0.0.1:8096 {
+              }
+            }
+  '';
 in
 {
   users.groups.${mediaGroup} = { };
@@ -176,6 +253,17 @@ in
     ];
   };
 
+  security.acme = {
+    acceptTerms = true;
+    defaults.email = "ege@celikci.me";
+    certs."balcova.online" = {
+      domain = "*.balcova.online";
+      dnsProvider = "cloudflare";
+      environmentFile = "${homeDir}/.config/containers/secrets/cloudflare-acme.env";
+      group = "caddy";
+    };
+  };
+
   services.caddy = {
     enable = true;
 
@@ -200,83 +288,14 @@ in
       }
     '';
 
+    virtualHosts."*.balcova.online" = {
+      useACMEHost = "balcova.online";
+      extraConfig = caddyRoutes;
+    };
+
     virtualHosts."http://*.balcova.online" = {
-      extraConfig = ''
-        @id host id.balcova.online
-        handle @id {
-          reverse_proxy 127.0.0.1:1411
-        }
-
-        @auth host auth.balcova.online
-        handle @auth {
-          reverse_proxy 127.0.0.1:3000
-        }
-
-        @music host music.balcova.online
-        handle @music {
-          reverse_proxy 127.0.0.1:4533
-        }
-
-        # --- Protected Apps ---
-        @deemix host deemix.balcova.online
-        handle @deemix {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:6595
-        }
-
-        @slskd host slskd.balcova.online
-        handle @slskd {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:5030
-        }
-
-        @sonarr host sonarr.balcova.online
-        handle @sonarr {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:8989
-        }
-
-        @radarr host radarr.balcova.online
-        handle @radarr {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:7878
-        }
-
-        @lidarr host lidarr.balcova.online
-        handle @lidarr {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:8686
-        }
-
-        @bazarr host bazarr.balcova.online
-        handle @bazarr {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:6767
-        }
-
-        @prowlarr host prowlarr.balcova.online
-        handle @prowlarr {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:9696
-        }
-
-        @seerr host seerr.balcova.online
-        handle @seerr {
-          reverse_proxy 127.0.0.1:5055
-        }
-
-        @qbit host qbit.balcova.online
-        handle @qbit {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:8080
-        }
-
-        @jellyfin host jellyfin.balcova.online
-        handle @jellyfin {
-          reverse_proxy 127.0.0.1:8096 {
-          }
-        }
-      '';
+      listenAddresses = [ "127.0.0.1" ];
+      extraConfig = caddyRoutes;
     };
   };
 }
