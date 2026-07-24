@@ -12,6 +12,7 @@ bitwarden:
   lastfm_apikey_id: "a5c2b4c4-3b18-48b1-9b66-b47900d08ecd"
   lastfm_secret_id: "54fd9fd6-c20e-4773-913a-b47900d11b3d"
   postgres_password_id: "4f47eced-0711-4d63-9b20-b47b000b5e01"
+  audiomuse_redis_password_id: "a3f1bd31-0b2d-4c05-8daa-b49100697974"
   proton_wg_key_id: "16749777-7c84-45d1-92e0-b47a00dce89c"
   gluetun_api_key_id: "86f44a59-02bc-42fd-a3ab-b484014b86bf"
   slsk_password_id: "f196d713-8845-4a16-a24c-b47a00da4ea2"

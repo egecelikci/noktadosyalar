@@ -15,6 +15,33 @@ in
     extraGroups = [ "render" "video" ];
   };
 
+  services.cloudflared = {
+      enable = true;
+      tunnels."<your-tunnel-id>" = {
+        credentialsFile = "${homeDir}/.config/cloudflared/tunnel-credentials.json";
+        default = "http_status:404";
+      };
+    };
+
+  services.tinyauth = {
+      enable = true;
+      environmentFile = "${homeDir}/.config/containers/secrets/tinyauth.env";
+      settings = {
+        APPURL = "https://auth.balcova.online";
+      };
+    };
+
+  services.pocket-id = {
+      enable = true;
+      environmentFile = "${homeDir}/.config/containers/secrets/pocket-id.env";
+      settings = {
+        APP_URL = "https://id.balcova.online";
+        TRUST_PROXY = true;
+        HOST = "127.0.0.1";
+        PORT = 1411;
+      };
+    };
+
   services.jellyfin = {
     enable = true;
     user = mediaUser;
@@ -70,7 +97,7 @@ in
     enable = true;
     port = 6380;
     bind = "0.0.0.0";
-    settings.requirepass = "...";
+    settings.requirepass = "${homeDir}/.config/redis/audiomuse-password";
   };
 
   networking.firewall.interfaces.docker0.allowedTCPPorts = [ 5432 6380 ];
