@@ -15,5 +15,8 @@
     "d /mnt/media 0775 egecelikci media -"
     "d /mnt/media/Music 0775 egecelikci media -"
     "d /mnt/media/torrents 0775 egecelikci media -"
+    "d /mnt/media/Movies 0775 egecelikci media -"
+    "d /mnt/media/TV 0775 egecelikci media -"
+    "d /mnt/media/Anime 0775 egecelikci media -"
   ];
 }

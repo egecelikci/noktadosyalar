@@ -143,6 +143,16 @@ in
     6380
   ];
 
+  networking.hosts = {
+    "127.0.0.1" = [
+      "jellyfin"
+      "radarr"
+      "sonarr"
+      "lidarr"
+      "prowlarr"
+    ];
+  };
+
   services.caddy = {
     enable = true;
 
@@ -229,7 +239,6 @@ in
 
         @seerr host seerr.balcova.online
         handle @seerr {
-          import tinyauth_forwarder
           reverse_proxy 127.0.0.1:5055
         }
 
@@ -237,6 +246,12 @@ in
         handle @qbit {
           import tinyauth_forwarder
           reverse_proxy 127.0.0.1:8080
+        }
+
+        @jellyfin host jellyfin.balcova.online
+        handle @jellyfin {
+          reverse_proxy 127.0.0.1:8096 {
+          }
         }
       '';
     };
