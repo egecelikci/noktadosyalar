@@ -17,7 +17,7 @@ in
 
   services.cloudflared = {
       enable = true;
-      tunnels."<your-tunnel-id>" = {
+      tunnels."a958ad3d-8c18-49fe-9d2f-213f50ad3bce" = {
         credentialsFile = "${homeDir}/.config/cloudflared/tunnel-credentials.json";
         default = "http_status:404";
       };
@@ -97,7 +97,7 @@ in
     enable = true;
     port = 6380;
     bind = "0.0.0.0";
-    settings.requirepass = "${homeDir}/.config/redis/audiomuse-password";
+    requirePassFile = "${homeDir}/.config/redis/audiomuse-password";
   };
 
   networking.firewall.interfaces.docker0.allowedTCPPorts = [ 5432 6380 ];
