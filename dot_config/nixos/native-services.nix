@@ -1,50 +1,58 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  domain    = "balcova.online";
+  domain = "balcova.online";
   mediaRoot = "/mnt/media";
-  homeDir   = "/home/egecelikci";
+  homeDir = "/home/egecelikci";
   mediaUser = "media";
   mediaGroup = "media";
 in
 {
-  users.groups.${mediaGroup} = {};
+  users.groups.${mediaGroup} = { };
   users.users.${mediaUser} = {
     isSystemUser = true;
     group = mediaGroup;
-    extraGroups = [ "render" "video" ];
+    extraGroups = [
+      "render"
+      "video"
+    ];
   };
 
   services.cloudflared = {
-      enable = true;
-      tunnels."1404537c-f758-400b-a044-e7ed1f70334f" = {
-        credentialsFile = "${homeDir}/.config/cloudflared/tunnel-credentials.json";
-        default = "http_status:404";
-        ingress = {
-          "*.balcova.online" = "http://127.0.0.1:80";
-          "balcova.online" = "http://127.0.0.1:80";
-        };
+    enable = true;
+    tunnels."1404537c-f758-400b-a044-e7ed1f70334f" = {
+      credentialsFile = "${homeDir}/.config/cloudflared/tunnel-credentials.json";
+      default = "http_status:404";
+      ingress = {
+        "*.balcova.online" = "http://127.0.0.1:80";
+        "balcova.online" = "http://127.0.0.1:80";
       };
     };
+  };
 
   services.tinyauth = {
-      enable = true;
-      environmentFile = "${homeDir}/.config/containers/secrets/tinyauth.env";
-      settings = {
-        APPURL = "https://auth.balcova.online";
-      };
+    enable = true;
+    environmentFile = "${homeDir}/.config/containers/secrets/tinyauth.env";
+    settings = {
+      APPURL = "https://auth.balcova.online";
     };
+  };
 
   services.pocket-id = {
-      enable = true;
-      environmentFile = "${homeDir}/.config/containers/secrets/pocket-id.env";
-      settings = {
-        APP_URL = "https://id.balcova.online";
-        TRUST_PROXY = true;
-        HOST = "127.0.0.1";
-        PORT = 1411;
-      };
+    enable = true;
+    environmentFile = "${homeDir}/.config/containers/secrets/pocket-id.env";
+    settings = {
+      APP_URL = "https://id.balcova.online";
+      TRUST_PROXY = true;
+      HOST = "127.0.0.1";
+      PORT = 1411;
     };
+  };
 
   services.jellyfin = {
     enable = true;
@@ -68,13 +76,30 @@ in
       "Plugins.Folder" = "/var/lib/navidrome/plugins";
     };
   };
-  systemd.services.navidrome.serviceConfig.EnvironmentFile = "${homeDir}/.config/navidrome/navidrome.env";
+  systemd.services.navidrome.serviceConfig.EnvironmentFile =
+    "${homeDir}/.config/navidrome/navidrome.env";
 
   services.prowlarr.enable = true;
-  services.radarr  = { enable = true; user = mediaUser; group = mediaGroup; };
-  services.sonarr  = { enable = true; user = mediaUser; group = mediaGroup; };
-  services.bazarr  = { enable = true; user = mediaUser; group = mediaGroup; };
-  services.lidarr  = { enable = true; user = mediaUser; group = mediaGroup; };
+  services.radarr = {
+    enable = true;
+    user = mediaUser;
+    group = mediaGroup;
+  };
+  services.sonarr = {
+    enable = true;
+    user = mediaUser;
+    group = mediaGroup;
+  };
+  services.bazarr = {
+    enable = true;
+    user = mediaUser;
+    group = mediaGroup;
+  };
+  services.lidarr = {
+    enable = true;
+    user = mediaUser;
+    group = mediaGroup;
+  };
 
   services.flaresolverr.enable = true;
 
@@ -88,10 +113,12 @@ in
     enable = true;
     enableTCPIP = true;
     ensureDatabases = [ "audiomuse" ];
-    ensureUsers = [{
-      name = "audiomuse";
-      ensureDBOwnership = true;
-    }];
+    ensureUsers = [
+      {
+        name = "audiomuse";
+        ensureDBOwnership = true;
+      }
+    ];
     authentication = ''
       host  audiomuse  audiomuse  172.16.0.0/12  scram-sha-256
     '';
@@ -104,7 +131,10 @@ in
     requirePassFile = "${homeDir}/.config/redis/audiomuse-password";
   };
 
-  networking.firewall.interfaces.docker0.allowedTCPPorts = [ 5432 6380 ];
+  networking.firewall.interfaces.docker0.allowedTCPPorts = [
+    5432
+    6380
+  ];
 
   services.caddy = {
     enable = true;
@@ -118,7 +148,7 @@ in
     '';
 
     extraConfig = ''
-      balcova.online {
+      http://balcova.online {
           redir https://id.balcova.online{uri}
       }
 
@@ -208,23 +238,7 @@ in
           import tinyauth_forwarder
           reverse_proxy 127.0.0.1:8096
         }
-
-        @archive host archive.balcova.online
-        handle @archive {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:8000
-        }
-
-        @aurral host aurral.balcova.online
-        handle @aurral {
-          import tinyauth_forwarder
-          reverse_proxy 127.0.0.1:3001
-        }
       '';
     };
   };
-  systemd.tmpfiles.rules = [
-    "d /var/lib/caddy 0750 caddy caddy -"
-  ];
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
 }
