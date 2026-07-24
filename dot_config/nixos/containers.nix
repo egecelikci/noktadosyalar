@@ -143,8 +143,13 @@ in
       extraOptions = [
         "--cap-add=NET_ADMIN"
         "--network=${net}"
+        "--health-cmd=/gluetun-entrypoint healthcheck"
+        "--health-interval=30s"
+        "--health-timeout=10s"
+        "--health-retries=3"
+        "--health-start-period=60s"
       ];
-      ports = [ "127.0.0.1:5030:5030" ];
+      ports = [ "127.0.0.1:5030:5030" "127.0.0.1:8080:8080" ];
     };
 
     slskd = {
@@ -167,6 +172,25 @@ in
       };
       # SLSKD_SLSK_USERNAME/PASSWORD, SLSKD_VPN_GLUETUN_API_KEY, SLSKD_API_KEY - see private_slskd.env.tmpl
       environmentFiles = [ "${homeDir}/.config/containers/secrets/slskd.env" ];
+    };
+
+    qbittorrent = {
+      image = "lscr.io/linuxserver/qbittorrent:latest";
+      dependsOn = [ "gluetun" ];
+      extraOptions = [ "--network=container:gluetun" ];
+      environment = {
+        TZ = "Europe/Istanbul";
+        PUID = "1000";
+        PGID = "1000";
+        WEBUI_PORT = "8080";
+        DOCKER_MODS = "ghcr.io/t-anc/gsp-qbittorent-gluetun-sync-port-mod:main";
+        GSP_MINIMAL_LOGS = "false";
+      };
+      environmentFiles = [ "${homeDir}/.config/containers/secrets/qbittorrent.env" ];
+      volumes = [
+        "${mediaRoot}/torrents:/data/torrents"
+        "${homeDir}/.config/qbittorrent:/config"
+      ];
     };
 
     audiomuse-ai-flask = {
@@ -196,76 +220,6 @@ in
       environmentFiles = [ "${homeDir}/.config/containers/secrets/audiomuse.env" ];
       volumes = [ "${mediaRoot}/Music/Library:/music:ro" ];
       extraOptions = [ "--network=${net}" "--add-host=host.docker.internal:host-gateway" ];
-    };
-
-    archivebox = {
-      image = "archivebox/archivebox:latest";
-      volumes = [ "${homeDir}/.local/share/archivebox/data:/data" ];
-      environment = {
-        ALLOWED_HOSTS = "*";
-        PUBLIC_ADD_VIEW = "False";
-        SAVE_ARCHIVE_DOT_ORG = "False";
-        MEDIA_MAX_SIZE = "5000m";
-      };
-      extraOptions = [ "--network=${net}" "--shm-size=1gb" ];
-      ports = [ "127.0.0.1:8000:8000" ];
-    };
-
-    aurral = {
-      image = "ghcr.io/lklynet/aurral:latest";
-      environment = {
-        TZ = "Europe/Istanbul";
-        DOWNLOAD_FOLDER = "/downloads/aurral";
-      };
-      volumes = [
-        "${mediaRoot}/Music/Downloads/Aurral:/downloads/aurral"
-        "${homeDir}/.config/aurral/data:/app/backend/data"
-      ];
-      extraOptions = [ "--network=${net}" ];
-      ports = [ "127.0.0.1:3001:3001" ];
-    };
-
-    arcane = {
-      image = "ghcr.io/getarcaneapp/manager:latest";
-      environment.TZ = "Europe/Istanbul";
-      # ENCRYPTION_KEY/JWT_SECRET only - see private_arcane.env.tmpl
-      environmentFiles = [ "${homeDir}/.config/containers/secrets/arcane.env" ];
-      volumes = [
-        "/var/run/docker.sock:/var/run/docker.sock"
-        "${homeDir}/.local/share/arcane/data:/app/data"
-      ];
-      extraOptions = [ "--network=${net}" "--cgroupns=host" ];
-      ports = [ "127.0.0.1:3552:3552" ];
-    };
-
-    autoheal = {
-      image = "willfarrell/autoheal:latest";
-      environment.AUTOHEAL_CONTAINER_LABEL = "all";
-      volumes = [ "/var/run/docker.sock:/var/run/docker.sock" ];
-      extraOptions = [ "--network=${net}" ];
-    };
-
-    # ---- extras profile (optional in the original compose) ----
-    minecraft = {
-      image = "itzg/minecraft-server:latest";
-      environment = {
-        EULA = "TRUE";
-        TYPE = "PAPER";
-        VERSION = "26.2";
-        MEMORY = "2G";
-        TZ = "Europe/Istanbul";
-      };
-      volumes = [ "${homeDir}/.local/share/minecraft/data:/data" ];
-      ports = [ "25565:25565" ];
-      extraOptions = [ "--network=${net}" "--memory=3g" ];
-    };
-
-    playit = {
-      image = "ghcr.io/playit-cloud/playit-agent:0.17";
-      dependsOn = [ "minecraft" ];
-      extraOptions = [ "--network=container:minecraft" ];
-      # SECRET_KEY only - see private_playit.env.tmpl
-      environmentFiles = [ "${homeDir}/.config/containers/secrets/playit.env" ];
     };
 
     recyclarr = {

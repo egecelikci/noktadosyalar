@@ -35,27 +35,25 @@ trap 'rm -rf "$SCRATCH"' EXIT
 # `systemctl cat bazarr` on this box for the real path), and confirm
 # "seerr" is actually your module's state-dir name.
 declare -A NATIVE_MAP=(
-  [radarr]="$MAC_HOME/.config/radarr|/var/lib/radarr/.config/Radarr"
-  [sonarr]="$MAC_HOME/.config/sonarr|/var/lib/sonarr/.config/Sonarr"
-  [lidarr]="$MAC_HOME/.config/lidarr|/var/lib/lidarr/.config/Lidarr"
   [bazarr]="$MAC_HOME/.config/bazarr|/var/lib/bazarr"
-  [prowlarr]="$MAC_HOME/.config/prowlarr|/var/lib/prowlarr"
   [jellyfin]="$MAC_HOME/.config/jellyfin|/var/lib/jellyfin"
-  [seerr]="$MAC_HOME/.config/seerr|/var/lib/seerr"
-  [qbittorrent]="$MAC_HOME/.config/qbittorrent|/var/lib/qbittorrent"
+  [lidarr]="$MAC_HOME/.config/lidarr|/var/lib/lidarr/.config/Lidarr"
   [navidrome]="$MAC_HOME/.local/share/navidrome/data|/var/lib/navidrome"
+  [prowlarr]="$MAC_HOME/.config/prowlarr|/var/lib/prowlarr"
+  [radarr]="$MAC_HOME/.config/radarr|/var/lib/radarr/.config/Radarr"
+  [seerr]="$MAC_HOME/.config/seerr|/var/lib/seerr"
+  [sonarr]="$MAC_HOME/.config/sonarr|/var/lib/sonarr/.config/Sonarr"
 )
 
 # Still on virtualisation.oci-containers (containers.nix), same relative
 # layout as macOS — just under a different home dir, so still remapped.
 declare -A DOCKER_MAP=(
-  [deemix]="$MAC_HOME/.config/deemix|$NIXOS_HOME/.config/deemix"
-  [slskd]="$MAC_HOME/.config/slskd|$NIXOS_HOME/.config/slskd"
-  [recyclarr]="$MAC_HOME/.config/recyclarr|$NIXOS_HOME/.config/recyclarr"
   [aurral]="$MAC_HOME/.config/aurral/data|$NIXOS_HOME/.config/aurral"
+  [deemix]="$MAC_HOME/.config/deemix|$NIXOS_HOME/.config/deemix"
   [pocket-id]="$MAC_HOME/.local/share/pocket-id/data|$NIXOS_HOME/.local/share/pocket-id"
-  [archivebox]="$MAC_HOME/.local/share/archivebox/data|$NIXOS_HOME/.local/share/archivebox"
-  [arcane]="$MAC_HOME/.local/share/arcane/data|$NIXOS_HOME/.local/share/arcane"
+  [qbittorrent]="$MAC_HOME/.config/qbittorrent|$NIXOS_HOME/.config/qbittorrent"
+  [recyclarr]="$MAC_HOME/.config/recyclarr|$NIXOS_HOME/.config/recyclarr"
+  [slskd]="$MAC_HOME/.config/slskd|$NIXOS_HOME/.config/slskd"
 )
 
 restore_map() {

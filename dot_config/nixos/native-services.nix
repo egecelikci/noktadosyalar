@@ -45,15 +45,6 @@ in
   services.bazarr  = { enable = true; user = mediaUser; group = mediaGroup; };
   services.lidarr  = { enable = true; user = mediaUser; group = mediaGroup; };
 
-  services.qbittorrent = {
-    enable = true;
-    user = mediaUser;
-    group = mediaGroup;
-    webuiPort = 8080;
-    torrentingPort = 50413;
-    openFirewall = false;
-  };
-
   services.flaresolverr.enable = true;
 
   services.seerr = {
@@ -129,11 +120,6 @@ in
         @music host music.balcova.online
         handle @music {
           reverse_proxy 127.0.0.1:4533
-        }
-
-        @arcane host arcane.balcova.online
-        handle @arcane {
-          reverse_proxy 127.0.0.1:3552
         }
 
         # --- Protected Apps ---

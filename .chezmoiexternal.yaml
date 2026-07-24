@@ -21,8 +21,3 @@
   type: file
   url: https://github.com/navidrome/apple-music-plugin/releases/latest/download/apple-music.ndp
   refreshPeriod: 24h
-
-.local/share/minecraft/data/plugins/squaremap.jar:
-  type: file
-  url: "{{ $squaremapURL }}"
-  refreshPeriod: 168h
