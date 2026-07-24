@@ -8,22 +8,13 @@
       repository = "rclone:Drive:restic";
 
       paths = [
-        "/home/egecelikci/.config/aurral"
-        "/home/egecelikci/.config/deemix"
-        "/home/egecelikci/.config/qbittorrent"
-        "/home/egecelikci/.config/recyclarr"
-        "/home/egecelikci/.config/slskd"
-        "/home/egecelikci/.local/share/audiomuse"
-        "/home/egecelikci/.local/share/lrclib"
-        "/home/egecelikci/.local/share/pocket-id"
-        "/var/lib/bazarr"
-        "/var/lib/jellyfin"
-        "/var/lib/lidarr/.config/Lidarr"
-        "/var/lib/navidrome"
-        "/var/lib/prowlarr"
-        "/var/lib/radarr/.config/Radarr"
-        "/var/lib/seerr"
-        "/var/lib/sonarr/.config/Sonarr"
+        "/var/lib"
+      ];
+
+      extraOptions = [
+        "exclude=/var/lib/docker"
+        "exclude=/var/lib/systemd"
+        "exclude=/var/lib/containers"
       ];
 
       environmentFile = "/home/egecelikci/.config/restic/restic-env";

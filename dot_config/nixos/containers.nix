@@ -28,7 +28,7 @@ in
     deemix = {
       image = "local/deemix:latest";
       volumes = [
-        "${homeDir}/.config/deemix:/config"
+        "/var/lib/deemix:/config"
         "${mediaRoot}/Music/Downloads/Deemix:/downloads"
       ];
       environment.DEEMIX_SINGLE_USER = "true";
@@ -78,7 +78,7 @@ in
       dependsOn = [ "gluetun" ];
       extraOptions = [ "--network=container:gluetun" ];
       volumes = [
-        "${homeDir}/.config/slskd:/app"
+        "/var/lib/slskd:/app"
         "${mediaRoot}/Music/Downloads/Soulseek:/downloads"
         "${mediaRoot}/Music/Library:/music:ro"
       ];
@@ -109,7 +109,7 @@ in
       environmentFiles = [ "${homeDir}/.config/containers/secrets/qbittorrent.env" ];
       volumes = [
         "${mediaRoot}/torrents:/data/torrents"
-        "${homeDir}/.config/qbittorrent:/config"
+        "/var/lib/qbittorrent:/config"
       ];
     };
 
@@ -143,7 +143,7 @@ in
     recyclarr = {
       image = "ghcr.io/recyclarr/recyclarr:8";
       user = "1000:1000";
-      volumes = [ "${homeDir}/.config/recyclarr:/config" ];
+      volumes = [ "/var/lib/recyclarr:/config" ];
       environmentFiles = [ "${homeDir}/.config/containers/.env" ];
       extraOptions = [ "--network=${net}" ];
     };
