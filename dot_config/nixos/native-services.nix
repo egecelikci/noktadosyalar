@@ -40,6 +40,13 @@ in
     environmentFile = "${homeDir}/.config/containers/secrets/tinyauth.env";
     settings = {
       APPURL = "https://auth.balcova.online";
+      OAUTH_AUTOREDIRECT = "pocketid";
+      OAUTH_PROVIDERS_POCKETID_AUTHURL = "https://id.balcova.online/authorize";
+      OAUTH_PROVIDERS_POCKETID_TOKENURL = "http://127.0.0.1:1411/api/oidc/token";
+      OAUTH_PROVIDERS_POCKETID_USERINFOURL = "http://127.0.0.1:1411/api/oidc/userinfo";
+      OAUTH_PROVIDERS_POCKETID_REDIRECTURL = "https://auth.balcova.online/api/oauth/callback/pocketid";
+      OAUTH_PROVIDERS_POCKETID_SCOPES = "openid email profile groups";
+      OAUTH_PROVIDERS_POCKETID_NAME = "Pocket ID";
     };
   };
 
