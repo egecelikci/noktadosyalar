@@ -18,14 +18,15 @@
   sops.defaultSopsFile = ./secrets.yaml;
   sops.age.keyFile = "/var/lib/sops-nix/key.txt";
 
-  sops.secrets."tinyauth/env" = { };
-  sops.secrets."pocket-id/env" = { };
-  sops.secrets."gluetun/env" = { };
-  sops.secrets."slskd/env" = { };
-  sops.secrets."qbittorrent/env" = { };
+  sops.secrets."audiomuse/env" = { };
   sops.secrets."cloudflare-acme/env" = { };
   sops.secrets."cloudflared/env" = { };
-  sops.secrets."audiomuse/env" = { };
   sops.secrets."deemix/env" = { };
+  sops.secrets."gluetun/env" = { };
+  sops.secrets."matrix/mas_pocketid_secret" = { };
+  sops.secrets."pocket-id/env" = { };
   sops.secrets."qbittorrent/env" = { };
+  sops.secrets."qbittorrent/env" = { };
+  sops.secrets."slskd/env" = { };
+  sops.secrets."tinyauth/env" = { };
 }

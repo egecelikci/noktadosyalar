@@ -14,7 +14,10 @@
     ./backup.nix
     ./containers.nix
     ./hardware-configuration.nix
-    ./native-services.nix
+    ./services/caddy.nix
+    ./services/auth.nix
+    ./services/media.nix
+    ./services/databases.nix
     ./secrets.nix
     ./storage.nix
   ];
