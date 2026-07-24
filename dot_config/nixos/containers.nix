@@ -153,14 +153,5 @@ in
         "--add-host=host.docker.internal:host-gateway"
       ];
     };
-
-    recyclarr = {
-      image = "ghcr.io/recyclarr/recyclarr:8";
-      user = "1000:1000";
-      volumes = [ "/var/lib/recyclarr:/config" ];
-      environmentFiles = [ "${homeDir}/.config/containers/.env" ];
-      extraOptions = [ "--network=${net}" ];
-    };
-
   };
 }

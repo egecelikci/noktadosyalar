@@ -86,11 +86,34 @@ in
   systemd.services.navidrome.serviceConfig.EnvironmentFile =
     "${homeDir}/.config/navidrome/navidrome.env";
 
+  systemd.services.recyclarr = {
+    description = "Recyclarr Sync";
+    after = [
+      "network.target"
+      "radarr.service"
+      "sonarr.service"
+    ];
+    wantedBy = [ "multi-user.target" ];
+    script = ''
+      ${pkgs.recyclarr}/bin/recyclarr sync --config /var/lib/recyclarr/configs/radarr.yml
+      ${pkgs.recyclarr}/bin/recyclarr sync --config /var/lib/recyclarr/configs/sonarr.yml
+    '';
+    serviceConfig = {
+      Type = "oneshot";
+      User = mediaUser;
+      Environment = [
+        "RECYCLARR_CONFIG_DIR=/var/lib/recyclarr"
+      ];
+      EnvironmentFile = "-/var/lib/recyclarr/env";
+    };
+  };
+
   services.prowlarr.enable = true;
   services.radarr = {
     enable = true;
     user = mediaUser;
     group = mediaGroup;
+    # openFirewall = false;
   };
   services.sonarr = {
     enable = true;

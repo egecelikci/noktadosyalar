@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://schemas.recyclarr.dev/v8/config-schema.json
 radarr:
   radarr-main:
-    base_url: http://172.17.0.1:7878
+    base_url: http://127.0.0.1:7878
     api_key: !env_var RADARR_API_KEY
 
     quality_definition:
