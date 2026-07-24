@@ -28,6 +28,8 @@
     editor = nano
 {{- if eq .chezmoi.os "darwin" }}
     sshCommand = ssh -o IdentityAgent=~/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+{{- else if eq .chezmoi.os "linux" }}
+    sshCommand = ssh -i ~/.ssh/id_auth_ed25519 -o IdentitiesOnly=yes
 {{- end }}
 
 [safe]
