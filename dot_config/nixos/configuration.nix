@@ -2,7 +2,12 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   imports = [
@@ -11,7 +16,7 @@
     ./backup.nix
     ./native-services.nix
     ./containers.nix
-    ];
+  ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -54,7 +59,11 @@
     isNormalUser = true;
     shell = pkgs.fish;
     description = "Ege Çelikçi";
-    extraGroups = [ "networkmanager" "wheel" "docker" ]; # wheel allows sudo
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "docker"
+    ]; # wheel allows sudo
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPaYomkrkg+WhBBuHrrPqCxqB2GRhqmLt5DJzQkjwalD"
     ];

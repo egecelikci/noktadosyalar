@@ -4,7 +4,11 @@
   fileSystems."/mnt/media" = {
     device = "/dev/disk/by-uuid/ce0ecdba-85d4-472b-a123-f636f73a8098";
     fsType = "btrfs";
-    options = [ "compress=zstd" "noatime" "nofail" ];
+    options = [
+      "compress=zstd"
+      "noatime"
+      "nofail"
+    ];
   };
 
   systemd.tmpfiles.rules = [

@@ -1,7 +1,10 @@
 { config, pkgs, ... }:
 
 {
-  environment.systemPackages = [ pkgs.rclone pkgs.restic ];
+  environment.systemPackages = [
+    pkgs.rclone
+    pkgs.restic
+  ];
 
   services.restic.backups = {
     appdata = {

@@ -1,10 +1,15 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
-  domain    = "balcova.online";
+  domain = "balcova.online";
   mediaRoot = "/mnt/media";
-  homeDir   = "/home/egecelikci";
-  net       = "media_network";
+  homeDir = "/home/egecelikci";
+  net = "media_network";
 in
 {
   virtualisation.docker.enable = true;
@@ -70,7 +75,10 @@ in
         "--health-retries=3"
         "--health-start-period=60s"
       ];
-      ports = [ "127.0.0.1:5030:5030" "127.0.0.1:8080:8080" ];
+      ports = [
+        "127.0.0.1:5030:5030"
+        "127.0.0.1:8080:8080"
+      ];
     };
 
     slskd = {
@@ -123,7 +131,10 @@ in
         POSTGRES_DB = "audiomuse";
       };
       environmentFiles = [ "${homeDir}/.config/containers/secrets/audiomuse.env" ];
-      extraOptions = [ "--network=${net}" "--add-host=host.docker.internal:host-gateway" ];
+      extraOptions = [
+        "--network=${net}"
+        "--add-host=host.docker.internal:host-gateway"
+      ];
     };
 
     audiomuse-ai-worker = {
@@ -137,7 +148,10 @@ in
       };
       environmentFiles = [ "${homeDir}/.config/containers/secrets/audiomuse.env" ];
       volumes = [ "${mediaRoot}/Music/Library:/music:ro" ];
-      extraOptions = [ "--network=${net}" "--add-host=host.docker.internal:host-gateway" ];
+      extraOptions = [
+        "--network=${net}"
+        "--add-host=host.docker.internal:host-gateway"
+      ];
     };
 
     recyclarr = {
