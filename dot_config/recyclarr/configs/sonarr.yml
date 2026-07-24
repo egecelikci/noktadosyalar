@@ -18,19 +18,7 @@ sonarr:
 
     custom_formats:
       - trash_ids:
-          - 158188097a58d7687dee647e04af0da3 # [Optional] Golden Rule HD
-        assign_scores_to:
-          - name: WEB-1080p
-            score: 0
-
-      - trash_ids:
           - 47435ece6b99a0b477caf360e79ba0bb # x265 (HD)
         assign_scores_to:
           - name: WEB-1080p
             score: 0
-
-      - trash_ids:
-          - 59c3af66780d08332fdc64e68297098f # [Unwanted] Unwanted Formats
-        assign_scores_to:
-          - name: WEB-1080p
-            score: -10000

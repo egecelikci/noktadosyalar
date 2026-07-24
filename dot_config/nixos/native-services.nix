@@ -104,7 +104,7 @@ in
       Environment = [
         "RECYCLARR_CONFIG_DIR=/var/lib/recyclarr"
       ];
-      EnvironmentFile = "-/var/lib/recyclarr/env";
+      EnvironmentFile = "/var/lib/recyclarr/env";
     };
   };
 
