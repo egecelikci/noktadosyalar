@@ -11,11 +11,12 @@
 
 {
   imports = [
-    ./hardware-configuration.nix
-    ./storage.nix
     ./backup.nix
-    ./native-services.nix
     ./containers.nix
+    ./hardware-configuration.nix
+    ./native-services.nix
+    ./secrets.nix
+    ./storage.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
@@ -27,13 +28,18 @@
   # Configure network connections interactively with nmcli or nmtui.
   networking.networkmanager.enable = true;
 
-  networking.interfaces.enp42s0.ipv4.addresses = [ {
-    address = "192.168.1.20";
-    prefixLength = 24;
-  } ];
+  networking.interfaces.enp42s0.ipv4.addresses = [
+    {
+      address = "192.168.1.20";
+      prefixLength = 24;
+    }
+  ];
 
   networking.defaultGateway = "192.168.1.1";
-  networking.nameservers = [ "192.168.1.1" "1.1.1.1" ];
+  networking.nameservers = [
+    "192.168.1.1"
+    "1.1.1.1"
+  ];
 
   time.timeZone = "Europe/Istanbul";
 
@@ -136,7 +142,10 @@
   # services.openssh.enable = true;
 
   # Open ports in the firewall.
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
   # networking.firewall.enable = false;

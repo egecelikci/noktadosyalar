@@ -1,0 +1,10 @@
+keys:
+  - &sunucu age10q85x5tpnzu8vdt7d25yegnvvhft8npnc04euq5mzxxz3vznv58sy80v8m
+  - &admin age1s72y267zxa9030psz3f3cgymevk9e96vskcmh9h9m5990xgez3msckznw5
+
+creation_rules:
+  - path_regex: secrets\.yaml$
+    key_groups:
+      - age:
+          - *sunucu
+          - *admin

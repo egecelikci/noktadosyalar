@@ -14,79 +14,133 @@ let
 
   caddyRoutes = ''
     @id host id.balcova.online
-            handle @id {
-              reverse_proxy 127.0.0.1:1411
-            }
+    handle @id {
+      reverse_proxy 127.0.0.1:1411
+    }
 
-            @auth host auth.balcova.online
-            handle @auth {
-              reverse_proxy 127.0.0.1:3000
-            }
+    @auth host auth.balcova.online
+    handle @auth {
+      reverse_proxy 127.0.0.1:3000
+    }
 
-            @music host music.balcova.online
-            handle @music {
-              reverse_proxy 127.0.0.1:4533
-            }
+    @music host music.balcova.online
+    handle @music {
+      reverse_proxy 127.0.0.1:4533
+    }
 
-            # --- Protected Apps ---
-            @deemix host deemix.balcova.online
-            handle @deemix {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:6595
-            }
+    # --- Protected Apps ---
 
-            @slskd host slskd.balcova.online
-            handle @slskd {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:5030
-            }
+    @deemix host deemix.balcova.online
+    handle @deemix {
+      import tinyauth_forwarder
+      reverse_proxy 127.0.0.1:6595
+    }
 
-            @sonarr host sonarr.balcova.online
-            handle @sonarr {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:8989
-            }
+    @slskd host slskd.balcova.online
+    handle @slskd {
+      import tinyauth_forwarder
+      reverse_proxy 127.0.0.1:5030
+    }
 
-            @radarr host radarr.balcova.online
-            handle @radarr {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:7878
-            }
+    @sonarr host sonarr.balcova.online
+        handle @sonarr {
+          @api {
+            path /api/* /ping
+            expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
+          }
+          handle @api {
+            reverse_proxy 127.0.0.1:8989
+          }
+          handle {
+            import tinyauth_forwarder
+            reverse_proxy 127.0.0.1:8989
+          }
+        }
 
-            @lidarr host lidarr.balcova.online
-            handle @lidarr {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:8686
-            }
+        @radarr host radarr.balcova.online
+        handle @radarr {
+          @api {
+            path /api/* /ping
+            expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
+          }
+          handle @api {
+            reverse_proxy 127.0.0.1:7878
+          }
+          handle {
+            import tinyauth_forwarder
+            reverse_proxy 127.0.0.1:7878
+          }
+        }
 
-            @bazarr host bazarr.balcova.online
-            handle @bazarr {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:6767
-            }
+        @lidarr host lidarr.balcova.online
+        handle @lidarr {
+          @api {
+            path /api/* /ping
+            expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
+          }
+          handle @api {
+            reverse_proxy 127.0.0.1:8686
+          }
+          handle {
+            import tinyauth_forwarder
+            reverse_proxy 127.0.0.1:8686
+          }
+        }
 
-            @prowlarr host prowlarr.balcova.online
-            handle @prowlarr {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:9696
-            }
+        @bazarr host bazarr.balcova.online
+        handle @bazarr {
+          @api {
+            path /api/* /ping
+            expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
+          }
+          handle @api {
+            reverse_proxy 127.0.0.1:6767
+          }
+          handle {
+            import tinyauth_forwarder
+            reverse_proxy 127.0.0.1:6767
+          }
+        }
 
-            @seerr host seerr.balcova.online
-            handle @seerr {
-              reverse_proxy 127.0.0.1:5055
-            }
+        @prowlarr host prowlarr.balcova.online
+        handle @prowlarr {
+          @api {
+            path /api/* /ping
+            expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
+          }
+          handle @api {
+            reverse_proxy 127.0.0.1:9696
+          }
+          handle {
+            import tinyauth_forwarder
+            reverse_proxy 127.0.0.1:9696
+          }
+        }
 
-            @qbit host qbit.balcova.online
-            handle @qbit {
-              import tinyauth_forwarder
-              reverse_proxy 127.0.0.1:8080
-            }
+    @seerr host seerr.balcova.online
+    handle @seerr {
+      reverse_proxy 127.0.0.1:5055
+    }
 
-            @jellyfin host jellyfin.balcova.online
-            handle @jellyfin {
-              reverse_proxy 127.0.0.1:8096 {
-              }
-            }
+    @qbit host qbit.balcova.online
+    handle @qbit {
+      @qbitApi {
+        path /api/*
+      }
+      handle @qbitApi {
+        reverse_proxy 127.0.0.1:8080
+      }
+      handle {
+        import tinyauth_forwarder
+        reverse_proxy 127.0.0.1:8080
+      }
+    }
+
+    @jellyfin host jellyfin.balcova.online
+    handle @jellyfin {
+      reverse_proxy 127.0.0.1:8096 {
+      }
+    }
   '';
 in
 {

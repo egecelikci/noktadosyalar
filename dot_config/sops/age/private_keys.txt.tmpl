@@ -1,0 +1,5 @@
+{{- if eq .chezmoi.os "darwin" -}}
+{{ (bitwardenSecrets "d2e12ae7-d307-4b06-8de7-b491015bea92").value }}
+{{- else if eq .chezmoi.os "linux" -}}
+{{ (bitwardenSecrets "ed4ea837-9b04-4ee4-b25e-b4910156db0f").value }}
+{{- end -}}
