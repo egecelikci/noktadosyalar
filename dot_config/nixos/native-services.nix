@@ -20,6 +20,10 @@ in
       tunnels."a958ad3d-8c18-49fe-9d2f-213f50ad3bce" = {
         credentialsFile = "${homeDir}/.config/cloudflared/tunnel-credentials.json";
         default = "http_status:404";
+        ingress = {
+          "*.balcova.online" = "http://127.0.0.1:80";
+          "balcova.online" = "http://127.0.0.1:80";
+        };
       };
     };
 
