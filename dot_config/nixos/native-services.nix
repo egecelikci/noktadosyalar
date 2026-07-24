@@ -168,7 +168,7 @@ in
 
   services.tinyauth = {
     enable = true;
-    environmentFile = "${homeDir}/.config/containers/secrets/tinyauth.env";
+    environmentFile = config.sops.secrets."tinyauth/env".path;
     settings = {
       APPURL = "https://auth.balcova.online";
       OAUTH_AUTOREDIRECT = "pocketid";
@@ -183,7 +183,7 @@ in
 
   services.pocket-id = {
     enable = true;
-    environmentFile = "${homeDir}/.config/containers/secrets/pocket-id.env";
+    environmentFile = config.sops.secrets."pocket-id/env".path;
     settings = {
       APP_URL = "https://id.balcova.online";
       TRUST_PROXY = true;
@@ -313,7 +313,7 @@ in
     certs."balcova.online" = {
       domain = "*.balcova.online";
       dnsProvider = "cloudflare";
-      environmentFile = "${homeDir}/.config/containers/secrets/cloudflare-acme.env";
+      environmentFile = config.sops.secrets."cloudflare-acme/env".path;
       group = "caddy";
     };
   };

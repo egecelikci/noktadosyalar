@@ -36,7 +36,7 @@ in
         "/var/lib/deemix:/config"
         "${mediaRoot}/Music/Downloads/Deemix:/downloads"
       ];
-      environment.DEEMIX_SINGLE_USER = "true";
+      environmentFiles = [ config.sops.secrets."deemix/env".path ];
       extraOptions = [ "--network=${net}" ];
       ports = [ "127.0.0.1:6595:6595" ];
     };
@@ -55,16 +55,7 @@ in
 
     gluetun = {
       image = "qmcgaw/gluetun:latest";
-      environment = {
-        VPN_SERVICE_PROVIDER = "protonvpn";
-        VPN_TYPE = "wireguard";
-        VPN_PORT_FORWARDING = "on";
-        VPN_PORT_FORWARDING_PROVIDER = "protonvpn";
-        PORT_FORWARD_ONLY = "on";
-        HTTP_CONTROL_SERVER_ADDRESS = ":8000";
-        FIREWALL_INPUT_PORTS = "8080,5030";
-      };
-      environmentFiles = [ "${homeDir}/.config/containers/secrets/gluetun.env" ];
+      environmentFiles = [ config.sops.secrets."gluetun/env".path ];
       extraOptions = [
         "--cap-add=NET_ADMIN"
         "--network=${net}"
@@ -89,16 +80,7 @@ in
         "${mediaRoot}/Music/Downloads/Soulseek:/downloads"
         "${mediaRoot}/Music/Library:/music:ro"
       ];
-      environment = {
-        SLSKD_NO_AUTH = "true";
-        SLSKD_DOWNLOADS_DIR = "/downloads";
-        SLSKD_REMOTE_CONFIGURATION = "true";
-        SLSKD_SHARED_DIR = "/music";
-        SLSKD_VPN = "true";
-        SLSKD_VPN_PORT_FORWARDING = "true";
-        SLSKD_VPN_GLUETUN_URL = "http://localhost:8000";
-      };
-      environmentFiles = [ "${homeDir}/.config/containers/secrets/slskd.env" ];
+      environmentFiles = [ config.sops.secrets."slskd/env".path ];
     };
 
     qbittorrent = {
@@ -113,7 +95,7 @@ in
         DOCKER_MODS = "ghcr.io/t-anc/gsp-qbittorent-gluetun-sync-port-mod:main";
         GSP_MINIMAL_LOGS = "false";
       };
-      environmentFiles = [ "${homeDir}/.config/containers/secrets/qbittorrent.env" ];
+      environmentFiles = [ config.sops.secrets."qbittorrent/env".path ];
       volumes = [
         "${mediaRoot}/torrents:/data/torrents"
         "/var/lib/qbittorrent:/config"
@@ -122,14 +104,7 @@ in
 
     audiomuse-ai-flask = {
       image = "ghcr.io/neptunehub/audiomuse-ai:latest";
-      environment = {
-        SERVICE_TYPE = "flask";
-        POSTGRES_HOST = "host.docker.internal";
-        POSTGRES_PORT = "5432";
-        POSTGRES_USER = "audiomuse";
-        POSTGRES_DB = "audiomuse";
-      };
-      environmentFiles = [ "${homeDir}/.config/containers/secrets/audiomuse.env" ];
+      environmentFiles = [ config.sops.secrets."audiomuse/env".path ];
       extraOptions = [
         "--network=${net}"
         "--add-host=host.docker.internal:host-gateway"
@@ -138,14 +113,7 @@ in
 
     audiomuse-ai-worker = {
       image = "ghcr.io/neptunehub/audiomuse-ai:latest";
-      environment = {
-        SERVICE_TYPE = "worker";
-        POSTGRES_HOST = "host.docker.internal";
-        POSTGRES_PORT = "5432";
-        POSTGRES_USER = "audiomuse";
-        POSTGRES_DB = "audiomuse";
-      };
-      environmentFiles = [ "${homeDir}/.config/containers/secrets/audiomuse.env" ];
+      environmentFiles = [ config.sops.secrets."audiomuse/env".path ];
       volumes = [ "${mediaRoot}/Music/Library:/music:ro" ];
       extraOptions = [
         "--network=${net}"
