@@ -171,15 +171,15 @@ in
     };
 
     # Matrix reverse proxy block
-    virtualHosts."matrix.celikci.me" = {
-      extraConfig = ''
-        reverse_proxy /_matrix/client/v3/login* 127.0.0.1:8080
-        reverse_proxy /_matrix/client/unstable/org.matrix.msc3882/login* 127.0.0.1:8080
-        reverse_proxy /_matrix/client/v3/logout* 127.0.0.1:8080
-        reverse_proxy /_matrix/client/v3/refresh* 127.0.0.1:8080
-
-        reverse_proxy 127.0.0.1:8008
-      '';
-    };
+    # virtualHosts."matrix.celikci.me" = {
+    #   extraConfig = ''
+    #     reverse_proxy /_matrix/client/v3/login* 127.0.0.1:8080
+    #     reverse_proxy /_matrix/client/unstable/org.matrix.msc3882/login* 127.0.0.1:8080
+    #     reverse_proxy /_matrix/client/v3/logout* 127.0.0.1:8080
+    #     reverse_proxy /_matrix/client/v3/refresh* 127.0.0.1:8080
+    #
+    #     reverse_proxy 127.0.0.1:8008
+    #   '';
+    # };
   };
 }
