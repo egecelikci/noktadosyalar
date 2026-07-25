@@ -17,8 +17,6 @@ let
       reverse_proxy 127.0.0.1:4533
     }
 
-    # --- Protected Apps ---
-
     @deemix host deemix.balcova.online
     handle @deemix {
       import tinyauth_forwarder
@@ -38,7 +36,10 @@ let
         expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
       }
       handle @api { reverse_proxy 127.0.0.1:8989 }
-      handle { import tinyauth_forwarder; reverse_proxy 127.0.0.1:8989 }
+      handle {
+        import tinyauth_forwarder
+        reverse_proxy 127.0.0.1:8989
+      }
     }
 
     @radarr host radarr.balcova.online
@@ -48,7 +49,10 @@ let
         expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
       }
       handle @api { reverse_proxy 127.0.0.1:7878 }
-      handle { import tinyauth_forwarder; reverse_proxy 127.0.0.1:7878 }
+      handle {
+        import tinyauth_forwarder
+        reverse_proxy 127.0.0.1:7878
+      }
     }
 
     @lidarr host lidarr.balcova.online
@@ -58,7 +62,10 @@ let
         expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
       }
       handle @api { reverse_proxy 127.0.0.1:8686 }
-      handle { import tinyauth_forwarder; reverse_proxy 127.0.0.1:8686 }
+      handle {
+        import tinyauth_forwarder
+        reverse_proxy 127.0.0.1:8686
+      }
     }
 
     @bazarr host bazarr.balcova.online
@@ -68,7 +75,10 @@ let
         expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
       }
       handle @api { reverse_proxy 127.0.0.1:6767 }
-      handle { import tinyauth_forwarder; reverse_proxy 127.0.0.1:6767 }
+      handle {
+        import tinyauth_forwarder
+        reverse_proxy 127.0.0.1:6767
+      }
     }
 
     @prowlarr host prowlarr.balcova.online
@@ -78,7 +88,10 @@ let
         expression `{header.X-Api-Key} != "" || {query.apikey} != ""`
       }
       handle @api { reverse_proxy 127.0.0.1:9696 }
-      handle { import tinyauth_forwarder; reverse_proxy 127.0.0.1:9696 }
+      handle {
+        import tinyauth_forwarder
+        reverse_proxy 127.0.0.1:9696
+      }
     }
 
     @seerr host seerr.balcova.online
@@ -90,7 +103,10 @@ let
     handle @qbit {
       @qbitApi { path /api/* }
       handle @qbitApi { reverse_proxy 127.0.0.1:8080 }
-      handle { import tinyauth_forwarder; reverse_proxy 127.0.0.1:8080 }
+      handle {
+        import tinyauth_forwarder
+        reverse_proxy 127.0.0.1:8080
+      }
     }
 
     @jellyfin host jellyfin.balcova.online
@@ -135,10 +151,6 @@ in
     '';
 
     extraConfig = ''
-      http://balcova.online {
-          redir https://id.balcova.online{uri}
-      }
-
       (tinyauth_forwarder) {
         forward_auth 127.0.0.1:3000 {
           uri /api/auth/caddy
