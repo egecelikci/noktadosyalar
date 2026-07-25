@@ -6,6 +6,7 @@
     enableTCPIP = true;
     ensureDatabases = [
       "audiomuse"
+      "mas"
     ];
     ensureUsers = [
       {
@@ -13,11 +14,13 @@
         ensureDBOwnership = true;
       }
       {
+        name = "mas";
         ensureDBOwnership = true;
       }
     ];
     authentication = ''
       host  audiomuse  audiomuse  172.16.0.0/12  scram-sha-256
+      host  mas        mas        172.16.0.0/12  trust
     '';
   };
 

@@ -18,17 +18,25 @@
     ./services/auth.nix
     ./services/media.nix
     ./services/databases.nix
+    # ./services/matrix.nix
     ./secrets.nix
     ./storage.nix
   ];
 
-  # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-
-  networking.hostName = "sunucu"; # keep the restic --host tag continuous with the retired macOS box
-
-  # Configure network connections interactively with nmcli or nmtui.
+  boot = {
+    # extraModprobeConfig = ''
+    #   options nct6687d fan_control=1
+    # '';
+    # extraModulePackages = with config.boot.kernelPackages; [
+    #   nct6687d
+    # ];
+    # kernelModules = [ "nct6687d" ];
+    loader = {
+      efi.canTouchEfiVariables = true;
+      systemd-boot.enable = true;
+    };
+  };
+  networking.hostName = "sunucu";
   networking.networkmanager.enable = true;
 
   networking.interfaces.enp42s0.ipv4.addresses = [
@@ -46,135 +54,112 @@
 
   time.timeZone = "Europe/Istanbul";
 
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-  # Select internationalisation properties.
-  # i18n.defaultLocale = "en_US.UTF-8";
-  # console = {
-  #   font = "Lat2-Terminus16";
-  #   keyMap = "us";
-  #   useXkbConfig = true; # use xkb.options in tty.
-  # };
-
-  # Enable the X11 windowing system.
-  # services.xserver.enable = true;
-
-  # Enable Tailscale so it reconnects on boot
-  services.tailscale.enable = true;
-
-  # Enable the OpenSSH daemon
-  services.openssh.enable = true;
-
-  # Enable Docker for your media stack
   virtualisation.docker.enable = true;
 
-  # Set up your primary user account
-  users.users.egecelikci = {
-    isNormalUser = true;
-    shell = pkgs.fish;
-    description = "Ege Çelikçi";
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-      "docker"
-    ]; # wheel allows sudo
+  users.users = {
+    egecelikci = {
+      isNormalUser = true;
+      shell = pkgs.fish;
+      description = "Ege Çelikçi";
+      extraGroups = [
+        "networkmanager"
+        "wheel"
+        "docker"
+        # "video"
+        # "render"
+        # "uinput"
+      ];
+    };
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPaYomkrkg+WhBBuHrrPqCxqB2GRhqmLt5DJzQkjwalD"
     ];
   };
 
-  # Ensure root also has your key as a fallback
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPaYomkrkg+WhBBuHrrPqCxqB2GRhqmLt5DJzQkjwalD"
-  ];
-
-  # Configure keymap in X11
-  # services.xserver.xkb.layout = "us";
-  # services.xserver.xkb.options = "eurosign:e,caps:escape";
-
-  # Enable CUPS to print documents.
-  # services.printing.enable = true;
-
-  # Enable sound.
-  # services.pulseaudio.enable = true;
-  # OR
-  # services.pipewire = {
-  #   enable = true;
-  #   pulse.enable = true;
-  # };
-
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.libinput.enable = true;
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  # users.users.alice = {
-  #   isNormalUser = true;
-  #   extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-  #   packages = with pkgs; [
-  #     tree
-  #   ];
-  # };
-
-  programs.fish.enable = true;
-
-  # List packages installed in system profile.
-  # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-    git
-    chezmoi
     bitwarden-cli
     bws
+    chezmoi
+    git
+    lm_sensors
     rclone
   ];
 
-  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "bws" ];
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
+    builtins.elem (lib.getName pkg) [
+      "bws"
+      # "steam"
+      # "steam-original"
+      # "steam-run"
+      # "steam-unwrapped"
+    ];
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
+  programs = {
+    coolercontrol.enable = true;
+    fish.enable = true;
+  };
+
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
+
+  hardware.uinput.enable = true;
+
+  # Merged Steam and Gamescope programs configuration
+  # programs = {
+  #   steam = {
+  #     enable = true;
+  #     remotePlay.openFirewall = true;
+  #     gamescopeSession.enable = true;
+  #   };
+  #   gamescope = {
+  #     enable = true;
+  #     capSysNice = true;
+  #   };
   # };
 
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
+  services = {
+    tailscale.enable = true;
+    openssh.enable = true;
+    # xserver.enable = false;
+    # getty.autologinUser = "egecelikci";
+    # greetd = {
+    #   enable = true;
+    #   settings = {
+    #     default_session = {
+    #       command = "env STEAM_CLIENT_IP=192.168.1.20 ${pkgs.gamescope}/bin/gamescope -W 1920 -H 1080 -f -e --xwayland-count 2 -- steam -pipewire-dmabuf -gamepadui";
+    #       user = "egecelikci";
+    #     };
+    #   };
+    # };
+    # sunshine = {
+    #   enable = true;
+    #   autoStart = true;
+    #   openFirewall = true;
+    # };
+  };
 
   # Open ports in the firewall.
-  networking.firewall.allowedTCPPorts = [
-    80
-    443
-  ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
+  networking.firewall = {
+    enable = true;
+    allowedTCPPorts = [
+      80
+      443
+      #   27036
+      #   27037
+      #   47990
+      #   48010
+      #   47984
+      #   47989
+    ];
+    # allowedUDPPorts = [
+    #   27031
+    #   27036
+    #   47998
+    #   48000
+    # ];
+  };
 
-  # Copy the NixOS configuration file and link it from the resulting system
-  # (/run/current-system/configuration.nix). This is useful in case you
-  # accidentally delete configuration.nix.
-  # system.copySystemConfiguration = true;
-
-  # This option defines the first version of NixOS you have installed on this particular machine,
-  # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
-  #
-  # Most users should NEVER change this value after the initial install, for any reason,
-  # even if you've upgraded your system to a new NixOS release.
-  #
-  # This value does NOT affect the Nixpkgs version your packages and OS are pulled from,
-  # so changing it will NOT upgrade your system - see https://nixos.org/manual/nixos/stable/#sec-upgrading for how
-  # to actually do that.
-  #
-  # This value being lower than the current NixOS release does NOT mean your system is
-  # out of date, out of support, or vulnerable.
-  #
-  # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
-  # and migrated your data accordingly.
-  #
-  # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
-  system.stateVersion = "26.05"; # Did you read the comment?
-
+  system.stateVersion = "26.05";
 }
