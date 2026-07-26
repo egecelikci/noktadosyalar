@@ -2,6 +2,11 @@ set fish_greeting ""
 
 abbr -a -g ls ls -laG
 
+if test -f ~/.config/bws/token
+    set -gx BWS_ACCESS_TOKEN (cat ~/.config/bws/token)
+end
+set -gx BWS_SERVER_URL https://vault.bitwarden.eu
+
 if type -q eza
     abbr --add -g ls 'eza --long --classify --all --header --git --no-user --tree --level 1'
 end
