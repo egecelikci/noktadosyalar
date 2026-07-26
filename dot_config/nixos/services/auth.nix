@@ -13,6 +13,12 @@
       OAUTH_PROVIDERS_POCKETID_REDIRECTURL = "https://auth.balcova.online/api/oauth/callback/pocketid";
       OAUTH_PROVIDERS_POCKETID_SCOPES = "openid email profile groups";
       OAUTH_PROVIDERS_POCKETID_NAME = "Pocket ID";
+      APPS_SONARR_OAUTH_GROUPS = "admins";
+      APPS_RADARR_OAUTH_GROUPS = "admins";
+      APPS_LIDARR_OAUTH_GROUPS = "admins";
+      APPS_BAZARR_OAUTH_GROUPS = "admins";
+      APPS_PROWLARR_OAUTH_GROUPS = "admins";
+      APPS_QBIT_OAUTH_GROUPS = "admins";
     };
   };
 

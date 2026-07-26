@@ -124,7 +124,7 @@ in
       ingress = {
         "*.balcova.online" = "http://127.0.0.1:80";
         "balcova.online" = "http://127.0.0.1:80";
-        "matrix.celikci.me" = "http://127.0.0.1:80";
+        "matrix.balcova.online" = "http://127.0.0.1:80";
       };
     };
   };
@@ -138,11 +138,16 @@ in
       environmentFile = config.sops.secrets."cloudflare-acme/env".path;
       group = "caddy";
     };
+    certs."celikci.me" = {
+      domain = "celikci.me";
+      dnsProvider = "cloudflare";
+      environmentFile = config.sops.secrets."cloudflare-acme/env".path;
+      group = "caddy";
+    };
   };
 
   services.caddy = {
     enable = true;
-
     globalConfig = ''
       email ege@celikci.me
       servers {
@@ -170,16 +175,18 @@ in
       extraConfig = caddyRoutes;
     };
 
-    # Matrix reverse proxy block
-    # virtualHosts."matrix.celikci.me" = {
-    #   extraConfig = ''
-    #     reverse_proxy /_matrix/client/v3/login* 127.0.0.1:8080
-    #     reverse_proxy /_matrix/client/unstable/org.matrix.msc3882/login* 127.0.0.1:8080
-    #     reverse_proxy /_matrix/client/v3/logout* 127.0.0.1:8080
-    #     reverse_proxy /_matrix/client/v3/refresh* 127.0.0.1:8080
-    #
-    #     reverse_proxy 127.0.0.1:8008
-    #   '';
-    # };
+    virtualHosts."matrix.balcova.online" = {
+      useACMEHost = "balcova.online";
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8008
+      '';
+    };
+
+    virtualHosts."element.balcova.online" = {
+      useACMEHost = "balcova.online";
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8082
+      '';
+    };
   };
 }

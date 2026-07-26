@@ -4,6 +4,7 @@
   services.postgresql = {
     enable = true;
     enableTCPIP = true;
+    settings.listen_addresses = "*";
     ensureDatabases = [
       "audiomuse"
       "mas"
@@ -21,6 +22,7 @@
     authentication = ''
       host  audiomuse  audiomuse  172.16.0.0/12  scram-sha-256
       host  mas        mas        172.16.0.0/12  trust
+      host  mas        mas        127.0.0.1/32   trust
     '';
   };
 

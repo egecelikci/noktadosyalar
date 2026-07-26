@@ -23,10 +23,20 @@
   sops.secrets."cloudflared/env" = { };
   sops.secrets."deemix/env" = { };
   sops.secrets."gluetun/env" = { };
-  sops.secrets."matrix/mas_pocketid_secret" = { };
+  sops.secrets."mautrix-discord/env" = { };
+  sops.secrets."mautrix-telegram/env" = { };
+  sops.secrets."mautrix-whatsapp/env" = { };
   sops.secrets."pocket-id/env" = { };
-  sops.secrets."qbittorrent/env" = { };
   sops.secrets."qbittorrent/env" = { };
   sops.secrets."slskd/env" = { };
   sops.secrets."tinyauth/env" = { };
+  sops.secrets."matrix/mas_pocketid_secret" = {
+    mode = "0444";
+    owner = "continuwuity";
+  };
+  sops.secrets."matrix/mas_shared_secret" = { };
+  sops.secrets."matrix/mas_encryption" = { };
+  sops.secrets."matrix/mas_private_key" = {
+    mode = "0444";
+  };
 }

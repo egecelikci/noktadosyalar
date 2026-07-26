@@ -1,51 +1,133 @@
 { config, pkgs, ... }:
 
 {
-  # 1. Generate the MAS config securely using SOPS templating
-  sops.templates."mas-config.yaml" = {
-    content = ''
-      matrix:
-        homeserver: "celikci.me"
-        endpoint: "http://127.0.0.1:8008"
-      database:
-        uri: "postgresql://mas@host.docker.internal/mas"
-      upstream_oauth2:
-        providers:
-          - id: "pocket-id"
-            issuer: "https://id.balcova.online"
-            client_id: "a932662b-fd47-46c4-a573-4b820283b95a"
-            client_secret: "${config.sops.placeholder."matrix/mas_pocketid_secret"}"
-            scope: "openid profile email"
-    '';
-  };
-
   services.matrix-continuwuity = {
     enable = true;
     settings = {
       global = {
         server_name = "celikci.me";
-
+        port = [ 8008 ];
         well_known = {
-          client = "https://matrix.celikci.me";
-          server = "matrix.celikci.me:443";
+          client = "https://matrix.balcova.online";
+          server = "matrix.balcova.online:443";
         };
-
         allow_registration = false;
         allow_local_passwords = false;
+        oauth = {
+          compatibility_mode = "exclusive";
+          oidc = {
+            enabled = true;
+            discovery_url = "https://id.balcova.online";
+            client_id = "a932662b-fd47-46c4-a573-4b820283b95a";
+            client_secret_file = config.sops.secrets."matrix/mas_pocketid_secret".path;
+          };
+        };
       };
     };
   };
 
-  # 3. Run MAS inside an OCI container to bypass the missing 26.11 module
-  virtualisation.oci-containers.containers.mas = {
-    image = "ghcr.io/element-hq/matrix-authentication-service:latest";
-    extraOptions = [
-      "--add-host=host.docker.internal:host-gateway"
-    ];
+  services.mautrix-discord = {
+    enable = true;
+    environmentFile = config.sops.secrets."mautrix-discord/env".path;
+    settings = {
+      homeserver = {
+        address = "http://127.0.0.1:8008";
+        domain = "celikci.me";
+      };
+      appservice = {
+        address = "http://127.0.0.1:29334";
+        hostname = "127.0.0.1";
+        port = 29334;
+        database = {
+          type = "sqlite3-fk-wal";
+          uri = "file:/var/lib/mautrix-discord/mautrix-discord.db?_txlock=immediate";
+        };
+      };
+      encryption = {
+        allow = true;
+        default = true;
+      };
+      bridge = {
+        permissions = {
+          "celikci.me" = "admin";
+        };
+      };
+    };
+  };
+
+  services.mautrix-telegram = {
+    enable = true;
+    environmentFile = config.sops.secrets."mautrix-telegram/env".path;
+    settings = {
+      homeserver = {
+        address = "http://127.0.0.1:8008";
+        domain = "celikci.me";
+      };
+      appservice = {
+        address = "http://127.0.0.1:29335";
+        hostname = "127.0.0.1";
+        port = 29335;
+        database = "sqlite:////var/lib/mautrix-telegram/mautrix-telegram.db";
+      };
+      telegram = {
+        api_id = 2010259;
+        api_hash = "8c8ef5982a0a5e3049ad70db4802055c";
+      };
+      encryption = {
+        allow = true;
+        default = true;
+      };
+      bridge = {
+        permissions = {
+          "celikci.me" = "admin";
+        };
+      };
+    };
+  };
+
+  # services.mautrix-whatsapp = {
+  #   enable = false;
+  #   environmentFile = config.sops.secrets."mautrix-whatsapp/env".path;
+  #   settings = {
+  #     homeserver = {
+  #       address = "http://127.0.0.1:8008";
+  #       domain = "celikci.me";
+  #     };
+  #     appservice = {
+  #       address = "http://127.0.0.1:29336";
+  #       hostname = "127.0.0.1";
+  #       port = 29336;
+  #       database = {
+  #         type = "sqlite3-fk-wal";
+  #         uri = "file:/var/lib/mautrix-whatsapp/mautrix-whatsapp.db?_txlock=immediate";
+  #       };
+  #     };
+  #     bridge = {
+  #       command_prefix = "!wa";
+  #       personal_filtering_spaces = true;
+  #       permissions = {
+  #         "celikci.me" = "admin";
+  #       };
+  #     };
+  #     encryption = {
+  #       allow = true;
+  #       default = true;
+  #       pickle_key = "generate";
+  #     };
+  #     network = {
+  #       mute_status_broadcast = true;
+  #     };
+  #   };
+  # };
+
+  virtualisation.oci-containers.containers.element = {
+    image = "vectorim/element-web:latest";
+    ports = [ "127.0.0.1:8082:80" ];
+    environment = {
+      VECTOR_DEFAULT_HS_URL = "https://matrix.balcova.online";
+    };
     volumes = [
-      # Mount the securely templated config into the container
-      "${config.sops.templates."mas-config.yaml".path}:/config.yaml:ro"
+      "/var/lib/element/config.json:/app/config.json:ro"
     ];
-    ports = [ "127.0.0.1:8080:8080" ];
   };
 }

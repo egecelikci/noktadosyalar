@@ -18,7 +18,7 @@
     ./services/auth.nix
     ./services/media.nix
     ./services/databases.nix
-    # ./services/matrix.nix
+    ./services/matrix.nix
     ./secrets.nix
     ./storage.nix
   ];
@@ -91,6 +91,10 @@
       # "steam-unwrapped"
     ];
 
+  nixpkgs.config.permittedInsecurePackages = [
+    "olm-3.2.16"
+  ];
+
   programs = {
     atuin = {
       enable = true;
@@ -148,6 +152,7 @@
   # Open ports in the firewall.
   networking.firewall = {
     enable = true;
+    trustedInterfaces = [ "docker0" ];
     allowedTCPPorts = [
       80
       443

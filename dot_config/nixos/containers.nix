@@ -120,5 +120,15 @@ in
         "--add-host=host.docker.internal:host-gateway"
       ];
     };
+
+    # mautrix-whatsapp = {
+    #   image = "dock.mau.dev/mautrix/whatsapp:latest";
+    #   autoStart = true;
+    #   ports = [ "127.0.0.1:29336:29336" ];
+    #   volumes = [
+    #     "/var/lib/mautrix-whatsapp:/data"
+    #   ];
+    #   environmentFiles = [ config.sops.secrets."mautrix-whatsapp/env".path ];
+    # };
   };
 }
