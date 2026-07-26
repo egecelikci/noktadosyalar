@@ -56,22 +56,19 @@
 
   virtualisation.docker.enable = true;
 
-  users.users = {
-    egecelikci = {
-      isNormalUser = true;
-      shell = pkgs.fish;
-      description = "Ege Çelikçi";
-      extraGroups = [
-        "networkmanager"
-        "wheel"
-        "docker"
-        # "video"
-        # "render"
-        # "uinput"
-      ];
-    };
+  users.users.egecelikci = {
+    isNormalUser = true;
+    shell = pkgs.fish;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPaYomkrkg+WhBBuHrrPqCxqB2GRhqmLt5DJzQkjwalD"
+    ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "docker"
+      # "video"
+      # "render"
+      # "uinput"
     ];
   };
 
@@ -95,6 +92,14 @@
     ];
 
   programs = {
+    atuin = {
+      enable = true;
+      enableFishIntegration = true;
+      settings = {
+        auto_sync = true;
+        sync_frequency = "5m";
+      };
+    };
     coolercontrol.enable = true;
     fish.enable = true;
   };
