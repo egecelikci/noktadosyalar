@@ -18,7 +18,7 @@
     ./services/auth.nix
     ./services/media.nix
     ./services/databases.nix
-    ./services/matrix.nix
+    # ./services/matrix.nix
     ./secrets.nix
     ./storage.nix
   ];
@@ -153,6 +153,9 @@
   networking.firewall = {
     enable = true;
     trustedInterfaces = [ "docker0" ];
+    # extraCommands = ''
+    #   iptables -A nixos-fw -p tcp -s 172.16.0.0/12 --dport 8008 -j nixos-fw-accept
+    # '';
     allowedTCPPorts = [
       80
       443

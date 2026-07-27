@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   services.matrix-continuwuity = {
@@ -48,6 +53,7 @@
         default = true;
       };
       bridge = {
+        personal_filtering_spaces = true;
         permissions = {
           "celikci.me" = "admin";
         };
@@ -78,6 +84,7 @@
         default = true;
       };
       bridge = {
+        personal_filtering_spaces = true;
         permissions = {
           "celikci.me" = "admin";
         };
@@ -85,49 +92,37 @@
     };
   };
 
-  # services.mautrix-whatsapp = {
-  #   enable = false;
-  #   environmentFile = config.sops.secrets."mautrix-whatsapp/env".path;
-  #   settings = {
-  #     homeserver = {
-  #       address = "http://127.0.0.1:8008";
-  #       domain = "celikci.me";
-  #     };
-  #     appservice = {
-  #       address = "http://127.0.0.1:29336";
-  #       hostname = "127.0.0.1";
-  #       port = 29336;
-  #       database = {
-  #         type = "sqlite3-fk-wal";
-  #         uri = "file:/var/lib/mautrix-whatsapp/mautrix-whatsapp.db?_txlock=immediate";
-  #       };
-  #     };
-  #     bridge = {
-  #       command_prefix = "!wa";
-  #       personal_filtering_spaces = true;
-  #       permissions = {
-  #         "celikci.me" = "admin";
-  #       };
-  #     };
-  #     encryption = {
-  #       allow = true;
-  #       default = true;
-  #       pickle_key = "generate";
-  #     };
-  #     network = {
-  #       mute_status_broadcast = true;
-  #     };
-  #   };
-  # };
-
-  virtualisation.oci-containers.containers.element = {
-    image = "vectorim/element-web:latest";
-    ports = [ "127.0.0.1:8082:80" ];
-    environment = {
-      VECTOR_DEFAULT_HS_URL = "https://matrix.balcova.online";
+  virtualisation.oci-containers.containers = {
+    element = {
+      image = "vectorim/element-web:latest";
+      ports = [ "127.0.0.1:8082:80" ];
+      environment = {
+        VECTOR_DEFAULT_HS_URL = "https://matrix.balcova.online";
+      };
+      volumes = [
+        "/var/lib/element/config.json:/app/config.json:ro"
+      ];
     };
-    volumes = [
-      "/var/lib/element/config.json:/app/config.json:ro"
-    ];
+
+    mautrix-whatsapp = {
+      image = "dock.mau.dev/mautrix/whatsapp:latest";
+      volumes = [
+        "/var/lib/mautrix-whatsapp:/data"
+      ];
+      extraOptions = [
+        "--network=host"
+      ];
+    };
   };
+
+  systemd.services."docker-mautrix-whatsapp".preStart = lib.mkAfter ''
+    mkdir -p /var/lib/mautrix-whatsapp
+    cp -f ${
+      config.sops.templates."mautrix-whatsapp-config.yaml".path
+    } /var/lib/mautrix-whatsapp/config.yaml
+
+    # Hand ownership to the mautrix container user (UID 1337)
+    chown -R 1337:1337 /var/lib/mautrix-whatsapp
+    chmod 644 /var/lib/mautrix-whatsapp/config.yaml
+  '';
 }
