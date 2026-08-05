@@ -13,9 +13,6 @@ Host git.sr.ht
   IdentitiesOnly yes
   IdentityFile /Users/egecelikci/.ssh/pc_auth.pub
 
-# sunucu server. IdentitiesOnly stops the agent from offering every
-# Bitwarden key (which exceeded sshd's MaxAuthTries and caused
-# "Too many authentication failures").
 Host sunucu 192.168.1.20
   HostName 192.168.1.20
   User egecelikci
@@ -28,5 +25,8 @@ Host codeberg.org
   IdentityFile ~/.ssh/id_auth_ed25519
 
 Host git.sr.ht
+  IdentityFile ~/.ssh/id_auth_ed25519
+
+Host gitlab.com
   IdentityFile ~/.ssh/id_auth_ed25519
 {{- end -}}
