@@ -1,8 +1,13 @@
 #!/usr/bin/env fish
 
-{{- if eq .chezmoi.os "darwin" -}}
+{{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "android") -}}
 # This hash ensures the script re-runs if your Bitwarden secrets change
 # secrets_hash: {{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value | sha256sum }}
+
+if not command -v rclone >/dev/null 2>&1
+    echo "rclone not installed; skipping"
+    exit 0
+end
 
 echo "Configuring Rclone remotes…"
 
