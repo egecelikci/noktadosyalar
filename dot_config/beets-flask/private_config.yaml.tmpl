@@ -1,0 +1,15 @@
+gui:
+  inbox:
+    folders:
+      Downloads:
+        name: "Downloads"
+        path: "{{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Downloads{{ else }}/mnt/media/Music/Downloads{{ end }}"
+        autotag: "preview"
+
+      Archive:
+        name: "Archive"
+        path: "/mnt/archive/music"
+        autotag: "no"
+
+  terminal:
+    start_path: "{{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Downloads{{ else }}/mnt/media/Music/Downloads{{ end }}"

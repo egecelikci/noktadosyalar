@@ -1,4 +1,4 @@
-directory: /Volumes/Toshiba/Music/Library
+directory: {{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Library{{ else }}/mnt/media/Music/Library{{ end }}
 library: ~/.config/beets/library.db
 
 paths:
@@ -136,4 +136,4 @@ match:
 
 watch:
   directories:
-    - /Volumes/Toshiba/Music/Downloads
+    - {{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Downloads{{ else }}/mnt/media/Music/Downloads{{ end }}
