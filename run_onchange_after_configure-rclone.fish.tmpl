@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 
-{{- if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "android") -}}
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "android") }}
 # This hash ensures the script re-runs if your Bitwarden secrets change
 # secrets_hash: {{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value | sha256sum }}
 
@@ -24,8 +24,8 @@ rclone config update "The Eye" type http url "https://beta.the-eye.eu"
 rclone config update 8BitDo type http url "https://tempfiles.8bitdo.com/SPSP/"
 
 echo "Rclone configuration successfully synced!"
-{{- else -}}
+{{ else }}
 # On NixOS the rclone config is managed declaratively via sops
 # (nixos repo: storage.nix / rclone-secrets.yaml).
 echo "rclone config is managed via sops on this machine"
-{{- end -}}
+{{ end }}
