@@ -1,5 +1,5 @@
 directory: {{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Library{{ else }}/mnt/media/Music/Library{{ end }}
-library: ~/.config/beets/library.db
+library: {{ if eq .chezmoi.os "darwin" }}~/.config/beets/library.db{{ else }}/var/lib/beets/library.db{{ end }}
 
 paths:
   comp: Compilations/[$year] $album%aunique{}/%if{$isMultidisc,Disc $disc/}$track. $artist - $title
