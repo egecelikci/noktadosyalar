@@ -47,7 +47,9 @@ duplicates:
   checksum: no
 
 chroma:
-  auto: yes
+  # Fingerprinting every file makes large imports hang for minutes;
+  # files are MB-tagged anyway. Trigger AcoustID manually when needed.
+  auto: no
 
 aunique:
   keys: albumartist album
