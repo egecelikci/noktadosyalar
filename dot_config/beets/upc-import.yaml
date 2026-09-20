@@ -1,0 +1,8 @@
+match:
+  strong_rec_thresh: 1.0
+  max_rec:
+    missing_tracks: strong
+    unmatched_tracks: strong
+    tracks: strong
+  distance_weights:
+    data_source: 0.0
