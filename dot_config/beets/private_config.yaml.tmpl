@@ -98,7 +98,11 @@ scrub:
   auto: yes
 
 filetote:
-  extensions: .cue .log .m3u
+  extensions: .cue .log .accurip .ffp .md5 .sfv .txt .nfo .pdf
+  patterns:
+    artworkdir:
+      - "[aA]rtwork/"
+      - "[sS]cans/"
   print_ignored: true
 
 badfiles:
