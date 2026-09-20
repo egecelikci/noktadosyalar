@@ -52,8 +52,10 @@ plugins:
   - scrub
   - smartplaylist
   - subsonicupdate
+{{ if eq .chezmoi.os "linux" }}
   - titlecase
   - web
+{{ end }}
   - zero
 
 web:
