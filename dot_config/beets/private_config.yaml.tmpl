@@ -53,6 +53,7 @@ plugins:
   - smartplaylist
   - subsonicupdate
 {{ if eq .chezmoi.os "linux" }}
+  - filetote
   - titlecase
   - web
 {{ end }}
@@ -96,6 +97,10 @@ replaygain:
 
 scrub:
   auto: yes
+
+filetote:
+  extensions: .cue .log .m3u
+  print_ignored: true
 
 badfiles:
   check_on_import: yes
