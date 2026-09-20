@@ -20,6 +20,13 @@ Host sunucu 192.168.1.20
   IdentitiesOnly yes
   IdentityFile /Users/egecelikci/.ssh/pc_auth.pub
 
+Host openwrt 192.168.1.1
+  HostName 192.168.1.1
+  User root
+  IdentityAgent /Users/egecelikci/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+  IdentitiesOnly yes
+  IdentityFile /Users/egecelikci/.ssh/openwrt.pub
+
 {{- else if or (eq .chezmoi.os "linux") (eq .chezmoi.os "android") -}}
 Host codeberg.org
   IdentityFile ~/.ssh/id_auth_ed25519
