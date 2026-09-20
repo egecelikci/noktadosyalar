@@ -2,9 +2,15 @@ directory: {{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Library{{ else
 library: {{ if eq .chezmoi.os "darwin" }}~/.config/beets/library.db{{ else }}/var/lib/beets/library.db{{ end }}
 
 paths:
-  comp: Compilations/[$year] $album%aunique{}/%if{$isMultidisc,Disc $disc/}$track. $artist - $title
+  comp: Compilations/%if{$year,[$year] ,}$album$atypes%aunique{}/%if{$isMultidisc,Disc $disc/}$track. $artist - $title
   singleton: Non-Album/$albumartist - $title
-  default: $albumartist/[$year] $album%aunique{}/%if{$isMultidisc,Disc $disc/}$track. $title
+  default: $albumartist/%if{$year,[$year] ,}$album$atypes%aunique{}/%if{$isMultidisc,Disc $disc/}$track. $title
+
+per_disc_numbering: yes
+original_date: yes
+artist_credit: no
+threaded: yes
+asciify_paths: yes
 
 import:
   write: yes
@@ -13,30 +19,58 @@ import:
   autotag: yes
   quiet_fallback: skip
   timid: no
+  reflink: auto
+  detail: yes
+  incremental: yes
+  duplicate_action: ask
+  duplicate_keys:
+    album: albumartist album mb_albumid
+    item: artist title
+  log: {{ if eq .chezmoi.os "darwin" }}~/.config/beets/import.log{{ else }}/var/lib/beets/import.log{{ end }}
 
 plugins:
-  - badfiles
+  - musicbrainz
   - chroma
+  - fromfilename
+  - albumtypes
+  - badfiles
   - convert
   - duplicates
   - edit
   - embedart
+  - export
   - fetchart
-  - fromfilename
+  - importadded
+  - importsource
   - info
   - inline
   - lyrics
   - mbcollection
+  - mbsubmit
   - mbsync
   - missing
-  - musicbrainz
+  - parentwork
   - replaygain
   - scrub
+  - smartplaylist
+  - subsonicupdate
+  - titlecase
+  - web
   - zero
+
+web:
+  host: 127.0.0.1
+  port: 5001
+  readonly: yes
+
+aunique:
+  keys: albumartist album
+  disambiguators: albumtype year label catalognum albumdisambig releasegroupdisambig mb_albumid
+  bracket: '()'
 
 zero:
   fields: comments grouping encoder
-  update_database: true
+  update_database: yes
 
 missing:
   format: $albumartist - $album - $title
@@ -44,21 +78,12 @@ missing:
   total: yes
 
 duplicates:
-  checksum: no
+  checksum: yes
+  tiebreak:
+    items: [bitrate]
 
 chroma:
-  # Fingerprinting every file makes large imports hang for minutes;
-  # files are MB-tagged anyway. Trigger AcoustID manually when needed.
   auto: no
-
-aunique:
-  keys: albumartist album
-  modifiers: mb_albumid
-  bracket: '()'
-
-artist_credit: no
-
-threaded: yes
 
 parentwork:
   force: no
@@ -67,16 +92,19 @@ parentwork:
 replaygain:
   auto: yes
   backend: ffmpeg
+  threads: 8
 
 scrub:
   auto: yes
 
 badfiles:
   check_on_import: yes
+  import_action_on_warning: continue
+  import_action_on_error: skip
   commands:
     flac: flac --test --silent
     m4a: ffmpeg -v error -f null - -i
-    mp3: "true"
+    mp3: mp3val
 
 fetchart:
   auto: yes
@@ -84,17 +112,40 @@ fetchart:
   quality: 85
   cover_format: JPEG
   sources:
-    - coverart
+    - coverart: release releasegroup
 
 embedart:
   auto: yes
-  remove_art_file: yes
+  remove_art_file: no
+  compare_threshold: 25
+  maxwidth: 1200
+
+edit:
+  albumfields: album albumartist year genres label catalognum albumtype albumtypes country media
+  itemfields: track title artist album genres composers lyricists year
+  ignore_fields: id path
+
+subsonic:
+  url: https://music.balcova.online
+  user: egecelikci
+  pass: '{{ (bitwardenSecrets .bitwarden.navidrome_password_id).value }}'
+  auth: token
+
+titlecase:
+  auto: no
+  fields:
+    - album
+    - title
+    - albumartist
+    - artist
+  preserve: []
 
 item_fields:
   isMultidisc: 1 if disctotal > 1 else 0
 
 convert:
   auto: no
+  dest: {{ if eq .chezmoi.os "darwin" }}~/Music/Portable{{ else }}/mnt/media/Music/Portable{{ end }}
   format: flac
   formats:
     flac:
@@ -103,7 +154,7 @@ convert:
 
 musicbrainz:
   user: egecelikci
-  pass: '{{ (bitwardenSecrets "fa45b741-685c-4acb-9ef7-b47400f6afe5").value }}'
+  pass: '{{ (bitwardenSecrets .bitwarden.musicbrainz_password_id).value }}'
   extra_tags: [barcode, catalognum, country, label, media, year]
   genres: yes
   external_ids:
@@ -127,16 +178,21 @@ lyrics:
   sources: [lrclib, lrcmux, genius]
   synced: yes
   keep_synced: yes
-  genius_api_key: '{{ (bitwardenSecrets "c8eec299-8cf0-4a33-b625-b47400f6e3a2").value }}'
+  genius_api_key: '{{ (bitwardenSecrets .bitwarden.genius_api_key_id).value }}'
 
-asciify_paths: yes
+smartplaylist:
+  auto: yes
+  playlist_dir: {{ if eq .chezmoi.os "darwin" }}~/.config/beets/playlists{{ else }}/var/lib/beets/playlists{{ end }}
+  relative_to: {{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Library{{ else }}/mnt/media/Music/Library{{ end }}
+  playlists:
+    - name: recently-added.m3u
+      query: added:-4w..
+    - name: recently-released.m3u
+      query: year:2024.. added-
 
 match:
   preferred:
     media: ['Digital Media|File']
+    original_year: yes
   ignore_case: yes
   ignore_accent: yes
-
-watch:
-  directories:
-    - {{ if eq .chezmoi.os "darwin" }}/Volumes/Toshiba/Music/Downloads{{ else }}/mnt/media/Music/Downloads{{ end }}

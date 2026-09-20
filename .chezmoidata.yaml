@@ -28,6 +28,7 @@ bitwarden:
 
   musicbrainz_password_id: "fa45b741-685c-4acb-9ef7-b47400f6afe5"
   genius_api_key_id: "c8eec299-8cf0-4a33-b625-b47400f6e3a2"
+  navidrome_password_id: "66b83aef-b0fe-4ce7-aa73-b4cb0012b2b0"
 
   atuin_username_id: "d6bf04ff-6b33-42cf-bfa6-b4690133b41c"
   atuin_password_id: "a437d588-0207-43ec-ac98-b4690133bcef"
