@@ -136,7 +136,7 @@ edit:
 
 subsonic:
   url: https://music.balcova.online
-  user: egecelikci
+  user: '{{ (bitwardenSecrets .bitwarden.username_id).value }}'
   pass: '{{ (bitwardenSecrets .bitwarden.navidrome_password_id).value }}'
   auth: token
 
@@ -162,7 +162,7 @@ convert:
       extension: flac
 
 musicbrainz:
-  user: egecelikci
+  user: '{{ (bitwardenSecrets .bitwarden.username_id).value }}'
   pass: '{{ (bitwardenSecrets .bitwarden.musicbrainz_password_id).value }}'
   extra_tags: [barcode, catalognum, country, label, media, year]
   genres: yes

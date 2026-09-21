@@ -1,6 +1,8 @@
 bitwarden:
   restic_password_id: "11479ea0-6123-44ea-8436-b46800f641c0"
   rclone_config_pass_id: "0cf59961-a39b-4dc3-b620-b46800f65b1a"
+  dufs_webdav_password_id: "dd8b366f-03aa-43c8-91a6-b4cc017712ce"
+  username_id: "11c8cb87-1ac2-49a3-a807-b4cc01793485"
   gdrive_client_id_id: "650ba8c7-e988-4747-b193-b4680100473c"
   gdrive_client_secret_id: "8555e00e-8c6e-4fb0-b4d5-b468010035b2"
   cf_api_token_id: "3158ad0e-b861-4db5-a20c-b48701095405"

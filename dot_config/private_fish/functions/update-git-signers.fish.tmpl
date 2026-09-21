@@ -2,7 +2,7 @@ function update-git-signers --description "Fetch public keys from Codeberg and u
     echo "Fetching public keys from Codeberg…"
     mkdir -p ~/.config/git
 
-    set -l keys (curl -sf https://codeberg.org/egecelikci.keys)
+    set -l keys (curl -sf https://codeberg.org/{{ (bitwardenSecrets .bitwarden.username_id).value }}.keys)
     if test $status -ne 0; or test -z "$keys"
         echo "Error: failed to fetch keys from Codeberg, leaving allowed_signers untouched." >&2
         return 1

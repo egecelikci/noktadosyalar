@@ -23,6 +23,14 @@ rclone config update Myrient type http url "https://myrient.erista.me"
 rclone config update "The Eye" type http url "https://beta.the-eye.eu"
 rclone config update 8BitDo type http url "https://tempfiles.8bitdo.com/SPSP/"
 
+# 3. Configure the Dufs WebDAV remote
+rclone config create dufs webdav \
+    url "https://dufs.balcova.online" \
+    vendor other \
+    user '{{ (bitwardenSecrets .bitwarden.username_id).value }}' \
+    pass '{{ (bitwardenSecrets .bitwarden.dufs_webdav_password_id).value }}' \
+    --obscure
+
 echo "Rclone configuration successfully synced!"
 {{ else }}
 # On NixOS the rclone config is managed declaratively via sops

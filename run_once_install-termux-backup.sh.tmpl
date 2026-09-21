@@ -5,5 +5,5 @@ IFS=$'\n\t'
 echo "Android environment detected. Bootstrapping restic backup…"
 
 # Fetch and execute the install script
-bash <(curl -fsSL https://codeberg.org/egecelikci/restic-termux-backup/raw/commit/f40a8ebe382f1c4444d05cb0a5c671b2ec090dbf/install.sh)
+bash <(curl -fsSL https://codeberg.org/{{ (bitwardenSecrets .bitwarden.username_id).value }}/restic-termux-backup/raw/commit/f40a8ebe382f1c4444d05cb0a5c671b2ec090dbf/install.sh)
 {{ end }}

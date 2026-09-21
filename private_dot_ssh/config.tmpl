@@ -15,7 +15,7 @@ Host git.sr.ht
 
 Host sunucu 192.168.1.20
   HostName 192.168.1.20
-  User egecelikci
+  User {{ (bitwardenSecrets .bitwarden.username_id).value }}
   IdentityAgent /Users/egecelikci/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
   IdentitiesOnly yes
   IdentityFile /Users/egecelikci/.ssh/pc_auth.pub
@@ -39,7 +39,7 @@ Host gitlab.com
 
 Host sunucu 192.168.1.20
   HostName 192.168.1.20
-  User egecelikci
+  User {{ (bitwardenSecrets .bitwarden.username_id).value }}
   IdentitiesOnly yes
   IdentityFile ~/.ssh/id_auth_ed25519
 {{- end -}}
