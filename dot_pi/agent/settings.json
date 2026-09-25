@@ -1,5 +1,14 @@
 {
   "theme": "dark",
   "defaultProvider": "opencode-go",
-  "defaultModel": "kimi-k2.6"
+  "defaultModel": "deepseek-v4.1-flash",
+  "lastChangelogVersion": "0.87.1",
+  "packages": [
+    "npm:pi-mcp-adapter",
+    "npm:pi-subagents",
+    "npm:pi-web-access",
+    "npm:@juicesharp/rpiv-ask-user-question",
+    "npm:@juicesharp/rpiv-todo",
+    "npm:@gotgenes/pi-permission-system"
+  ]
 }
