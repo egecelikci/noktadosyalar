@@ -78,7 +78,9 @@ missing:
   total: yes
 
 duplicates:
-  checksum: yes
+  # Audio-content fingerprint (decoded PCM md5) instead of the raw file md5.
+  # Handles files and album directories; see ~/.config/beets/audiofp.
+  checksum: bash {{ .chezmoi.homeDir }}/.config/beets/audiofp {file}
   tiebreak:
     items: [bitrate]
 
@@ -116,9 +118,6 @@ badfiles:
 
 fetchart:
   auto: yes
-  maxwidth: 1200
-  quality: 85
-  cover_format: JPEG
   cautious: yes
   sources:
     - filesystem
@@ -127,7 +126,6 @@ fetchart:
 embedart:
   auto: yes
   remove_art_file: no
-  maxwidth: 1200
 
 edit:
   albumfields: album albumartist year genres label catalognum albumtype albumtypes country media

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Audio-content fingerprint for the beets `duplicates` plugin.
+# Computes the MD5 of the decoded PCM stream (works for flac/mp3/m4a/...),
+# so files with identical audio match even if tags/artwork/compression differ.
+# A directory (beets Album.path) is fingerprinted from all its audio files.
+#
+# Usage: audiofp <file-or-directory>
+
+set -u
+
+fp_file() {
+    ffmpeg -v error -i "$1" -map 0:a -f md5 - 2>/dev/null
+}
+
+target="${1:-}"
+if [ -z "$target" ]; then
+    echo "usage: audiofp <file-or-directory>" >&2
+    exit 2
+fi
+
+if [ -d "$target" ]; then
+    find "$target" -type f \
+        \( -iname '*.flac' -o -iname '*.mp3' -o -iname '*.m4a' -o -iname '*.aac' \
+        -o -iname '*.ogg' -o -iname '*.opus' -o -iname '*.wav' -o -iname '*.aiff' \
+        -o -iname '*.alac' -o -iname '*.wv' \) -print0 \
+        | sort -z \
+        | while IFS= read -r -d '' f; do fp_file "$f"; done \
+        | md5sum | cut -d' ' -f1
+else
+    fp_file "$target"
+fi
