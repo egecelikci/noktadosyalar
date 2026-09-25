@@ -1,0 +1,46 @@
+{
+  "settings": {
+    "toolPrefix": "server",
+    "allowInstall": true
+  },
+  "mcpServers": {
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "{{ if .bitwarden.context7_api_key_id }}{{ (bitwardenSecrets .bitwarden.context7_api_key_id).value }}{{ else }}REPLACE_ME_SET_bitwarden.context7_api_key_id{{ end }}"
+      },
+      "lifecycle": "keep-alive"
+    }
+{{ if eq .chezmoi.os "darwin" }},
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.82",
+        "--executable-path",
+        "/Users/egecelikci/Applications/Helium.app/Contents/MacOS/Helium"
+      ],
+      "env": {
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "1"
+      },
+      "lifecycle": "lazy-keep-alive"
+    },
+    "nixos": {
+      "command": "/Users/egecelikci/.local/bin/uvx",
+      "args": [
+        "mcp-nixos"
+      ],
+      "lifecycle": "lazy"
+    }
+{{ else if eq .chezmoi.os "linux" }},
+    "playwright": {
+      "url": "http://127.0.0.1:8931/mcp",
+      "lifecycle": "lazy"
+    },
+    "nixos": {
+      "command": "/etc/profiles/per-user/egecelikci/bin/mcp-nixos",
+      "lifecycle": "lazy"
+    }
+{{ end }}
+  }
+}
