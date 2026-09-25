@@ -8,6 +8,7 @@
     "npm:pi-subagents",
     "npm:pi-web-access",
     "npm:@juicesharp/rpiv-ask-user-question",
-    "npm:@juicesharp/rpiv-todo"
+    "npm:@juicesharp/rpiv-todo",
+    "npm:@dietrichgebert/ponytail"
   ]
 }
