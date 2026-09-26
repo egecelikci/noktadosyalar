@@ -4,14 +4,7 @@
     "allowInstall": true
   },
   "mcpServers": {
-    "context7": {
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "{{ if .bitwarden.context7_api_key_id }}{{ (bitwardenSecrets .bitwarden.context7_api_key_id).value }}{{ else }}REPLACE_ME_SET_bitwarden.context7_api_key_id{{ end }}"
-      },
-      "lifecycle": "keep-alive"
-    }
-{{ if eq .chezmoi.os "darwin" }},
+{{ if eq .chezmoi.os "darwin" }}
     "playwright": {
       "command": "npx",
       "args": [
