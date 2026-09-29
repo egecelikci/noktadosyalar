@@ -25,7 +25,7 @@ rclone config update 8BitDo type http url "https://tempfiles.8bitdo.com/SPSP/"
 
 # 3. Configure the Dufs WebDAV remote
 rclone config create dufs webdav \
-    url "https://dufs.balcova.online" \
+    url "https://dufs.celikci.me" \
     vendor other \
     user '{{ (bitwardenSecrets .bitwarden.username_id).value }}' \
     pass '{{ (bitwardenSecrets .bitwarden.dufs_webdav_password_id).value }}' \
