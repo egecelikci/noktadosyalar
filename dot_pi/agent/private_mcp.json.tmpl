@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-{{ if eq .chezmoi.os "darwin" }}
+{{- if eq .chezmoi.os "darwin" }}
     "playwright": {
       "command": "npx",
       "args": [
@@ -19,13 +19,13 @@
         "mcp-nixos"
       ]
     }
-{{ else if eq .chezmoi.os "linux" }}
+{{- else if eq .chezmoi.os "linux" }}
     "playwright": {
-      "url": "http://127.0.0.1:8931/mcp"
+      "url": "http://localhost:8931/mcp"
     },
     "nixos": {
       "command": "/etc/profiles/per-user/egecelikci/bin/mcp-nixos"
     }
-{{ end }}
+{{- end }}
   }
 }
