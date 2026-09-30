@@ -4,7 +4,6 @@
   "defaultModel": "deepseek-v4.1-flash",
   "lastChangelogVersion": "0.87.1",
   "packages": [
-    "npm:pi-mcp-adapter",
     "npm:pi-subagents",
     "npm:pi-web-access",
     "npm:@juicesharp/rpiv-ask-user-question",
