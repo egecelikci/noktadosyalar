@@ -2,7 +2,7 @@
   "theme": "dark",
   "defaultProvider": "opencode-go",
   "defaultModel": "deepseek-v4.1-flash",
-  "lastChangelogVersion": "0.99.1",
+  "lastChangelogVersion": "1.0.3",
   "packages": [
     "npm:pi-subagents",
     "npm:pi-web-access",
