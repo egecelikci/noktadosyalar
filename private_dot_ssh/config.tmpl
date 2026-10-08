@@ -25,7 +25,7 @@ Host openwrt 192.168.1.1
   User root
   IdentityAgent /Users/egecelikci/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
   IdentitiesOnly yes
-  IdentityFile /Users/egecelikci/.ssh/openwrt.pub
+  IdentityFile /Users/egecelikci/.ssh/pc_auth.pub
 
 {{- else if or (eq .chezmoi.os "linux") (eq .chezmoi.os "android") -}}
 Host codeberg.org
@@ -40,6 +40,12 @@ Host gitlab.com
 Host sunucu 192.168.1.20
   HostName 192.168.1.20
   User {{ (bitwardenSecrets .bitwarden.username_id).value }}
+  IdentitiesOnly yes
+  IdentityFile ~/.ssh/id_auth_ed25519
+
+Host openwrt 192.168.1.1
+  HostName 192.168.1.1
+  User root
   IdentitiesOnly yes
   IdentityFile ~/.ssh/id_auth_ed25519
 {{- end -}}
