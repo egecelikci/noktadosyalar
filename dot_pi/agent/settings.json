@@ -2,12 +2,13 @@
   "theme": "dark",
   "defaultProvider": "opencode-go",
   "defaultModel": "deepseek-v4.1-flash",
-  "lastChangelogVersion": "1.0.3",
+  "lastChangelogVersion": "1.1.0",
   "packages": [
     "npm:pi-subagents",
     "npm:pi-web-access",
     "npm:@juicesharp/rpiv-ask-user-question",
     "npm:@dietrichgebert/ponytail",
-    "npm:@upstash/context7-pi"
+    "npm:@upstash/context7-pi",
+    "npm:pi-claude-oauth-adapter"
   ]
 }
