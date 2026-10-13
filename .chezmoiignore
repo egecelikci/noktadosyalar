@@ -29,7 +29,6 @@ mastercomfig/
 .config/cloudflared
 .config/navidrome
 .config/restic
-.config/sops
 
 # Pi is not used on the phone.
 .pi
