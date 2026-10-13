@@ -1,3 +1,4 @@
+{{ if eq .chezmoi.os "darwin" -}}
 #!/usr/bin/env fish
 #
 set CHEZMOI_SOURCE "{{ .chezmoi.sourceDir }}"
@@ -21,3 +22,4 @@ if test -n "$STEAM_APPS_DIR"
 else
     echo "No Steam path defined for this OS. Skipping TF2 configs."
 end
+{{ end -}}
