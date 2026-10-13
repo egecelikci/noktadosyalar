@@ -8,6 +8,12 @@
 # Team Fortress 2
 mastercomfig/
 
+{{ if ne .chezmoi.os "android" }}
+# Termux-only wrapper (dot_local/bin/executable_bws.tmpl). Ignored elsewhere,
+# because an empty rendering would otherwise delete a real ~/.local/bin/bws.
+.local/bin/bws
+{{ end }}
+
 {{ if eq .chezmoi.os "linux" }}
 # The server's restic credentials come from sops (nixos repo:
 # modules/backup.nix). .backup_env.fish is for the phone's backup.fish and the

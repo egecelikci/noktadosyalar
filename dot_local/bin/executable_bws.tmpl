@@ -1,0 +1,30 @@
+{{- if eq .chezmoi.os "android" -}}
+#!/data/data/com.termux/files/usr/bin/sh
+# @file bws
+# @brief Runs the real `bws` with a resolver config on Termux.
+# @description
+#     The `bws` in `$PREFIX/bin` is the static musl build from Bitwarden's
+#     GitHub releases (`run_after_update-bws.sh` keeps it current). A static
+#     binary reads `/etc/resolv.conf` and nothing else, Android has no such
+#     file, and without it every lookup fails with "Try again". `proot` shows
+#     the process Termux's own copy at that path. Nothing else is wrapped.
+#
+#     This file shadows the real binary by name, because `~/.local/bin` comes
+#     before `$PREFIX/bin` in `PATH`. It calls the real one by absolute path, so
+#     it cannot call itself.
+#
+#     The CA bundle is pointed at Termux's too (the binary looks in places
+#     Termux does not have); an existing `SSL_CERT_FILE` is respected.
+#
+#     Needs `pkg install proot`.
+
+P="${PREFIX:-/data/data/com.termux/files/usr}"
+
+command -v proot >/dev/null 2>&1 || {
+    echo "bws: proot is not installed (pkg install proot)" >&2
+    exit 127
+}
+
+export SSL_CERT_FILE="${SSL_CERT_FILE:-$P/etc/tls/cert.pem}"
+exec proot -b "$P/etc/resolv.conf:/etc/resolv.conf" "$P/bin/bws" "$@"
+{{ end -}}
