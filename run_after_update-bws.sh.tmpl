@@ -1,0 +1,203 @@
+{{- if eq .chezmoi.os "android" -}}
+#!/data/data/com.termux/files/usr/bin/bash
+# @file update-bws.sh
+# @brief Keeps the `bws` binary on the phone current.
+# @description
+#     A `run_after_` script, so chezmoi runs it on every `chezmoi apply` and
+#     `chezmoi update`. chezmoi is not a daemon, so "automatic" means: whenever
+#     the dotfiles are next updated. At most one check per 24 hours;
+#     `BWS_UPDATE_FORCE=1` skips that limit.
+#
+#     `bws` here is the static musl build from the GitHub releases of
+#     bitwarden/sdk-sm. That repository also holds SDK and library releases, so
+#     "latest release" would be wrong: only tags named `bws-v<version>` count.
+#
+#     A release is installed only if all of these hold:
+#
+#     * it is not a draft or prerelease, and is newer than the installed one,
+#     * it is at least {{ .bws.min_age_days }} days old and its major version is at most {{ .bws.max_major }}
+#       (both set in `.chezmoidata.yaml`),
+#     * the GitHub API lists a SHA-256 digest for the download and it matches,
+#     * the new binary runs and reports the expected version.
+#
+#     The previous binary is kept as `~/.local/share/bws-update/bws.prev`;
+#     to roll back, copy it over `$PREFIX/bin/bws`.
+#
+#     The digest guards against corrupted or truncated downloads. It does not
+#     prove who built the file, because the digest comes from the same GitHub
+#     release. The minimum age is the protection against a bad release.
+#
+#     Whatever goes wrong, this script reports it and exits 0: a failed update
+#     must never stop `chezmoi apply`.
+
+set -uo pipefail
+
+API_URL="${BWS_UPDATE_API:-https://api.github.com/repos/bitwarden/sdk-sm/releases?per_page=100}"
+MAX_MAJOR={{ .bws.max_major }}
+MIN_AGE_DAYS={{ .bws.min_age_days }}
+BIN="${PREFIX:-/data/data/com.termux/files/usr}/bin/bws"
+STATE_DIR="$HOME/.local/share/bws-update"
+STAMP="$HOME/.cache/bws-update/checked"
+TMP_DIR=""
+
+# @description Print a message prefixed with the script name.
+# @arg $@ string Message.
+log() { echo "bws-update: $*" >&2; }
+
+# @description Install any of curl, jq and unzip that are missing.
+# @exitcode 0 All three are available.
+# @exitcode 1 One could not be installed.
+ensure_tools() {
+    local tool
+    for tool in curl jq unzip; do
+        command -v "$tool" >/dev/null && continue
+        log "installing $tool"
+        pkg install -y "$tool" >&2 || return 1
+    done
+}
+
+# @description Tell whether the last successful check is more than 24 hours old.
+# @exitcode 0 A check is due.
+# @exitcode 1 The last check was recent.
+is_due() {
+    [[ "${BWS_UPDATE_FORCE:-}" == 1 ]] && return 0
+    [[ -f "$STAMP" ]] || return 0
+    [[ -z "$(find "$STAMP" -mmin -1440 2>/dev/null)" ]]
+}
+
+# @description Print the installed bws version, or 0.0.0 if there is none.
+# @stdout Version number.
+installed_version() {
+    local out
+    if out=$("$BIN" --version 2>/dev/null) && [[ -n "$out" ]]; then
+        echo "${out##* }"
+    else
+        echo 0.0.0
+    fi
+}
+
+# @description Print the newest release allowed by the age and major-version
+#     limits.
+# @arg $1 string Path to the GitHub releases JSON.
+# @stdout Version number, or nothing if no release qualifies.
+newest_eligible() {
+    local cutoff version published
+    cutoff=$(($(date +%s) - MIN_AGE_DAYS * 86400))
+    jq -r '
+        .[]
+        | select(.tag_name | startswith("bws-v"))
+        | select(.draft | not)
+        | select(.prerelease | not)
+        | [(.tag_name | ltrimstr("bws-v")), .published_at]
+        | @tsv' "$1" |
+        while IFS=$'\t' read -r version published; do
+            [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || continue
+            ((${version%%.*} <= MAX_MAJOR)) || continue
+            (($(date -d "$published" +%s) <= cutoff)) || continue
+            echo "$version"
+        done | sort -V | tail -n 1
+}
+
+# @description Download a release asset, verify it and install the binary in it.
+# @arg $1 string Path to the GitHub releases JSON.
+# @arg $2 string Version to install.
+# @arg $3 string CPU architecture as used in asset names (aarch64, x86_64).
+# @exitcode 0 Installed.
+# @exitcode 1 Anything went wrong; the installed binary is untouched.
+install_release() {
+    local json=$1 version=$2 arch=$3 name url digest out
+    name="bws-${arch}-unknown-linux-musl-${version}.zip"
+
+    IFS=$'\t' read -r url digest < <(
+        jq -r --arg tag "bws-v$version" --arg name "$name" '
+            .[] | select(.tag_name == $tag) | .assets[]
+            | select(.name == $name)
+            | [.browser_download_url, (.digest // "")] | @tsv' "$json"
+    )
+    [[ -n "${url:-}" ]] || {
+        log "release bws-v$version has no asset $name"
+        return 1
+    }
+    [[ "${digest:-}" == sha256:* ]] || {
+        log "$name has no SHA-256 digest in the API response; not installing it unverified"
+        return 1
+    }
+
+    curl -fsSL --retry 2 -o "$TMP_DIR/$name" "$url" || {
+        log "download of $name failed"
+        return 1
+    }
+    echo "${digest#sha256:}  $TMP_DIR/$name" | sha256sum -c --status - || {
+        log "SHA-256 of $name does not match the release digest; discarding it"
+        return 1
+    }
+    unzip -q -o "$TMP_DIR/$name" bws -d "$TMP_DIR" || {
+        log "could not unpack $name"
+        return 1
+    }
+
+    chmod +x "$TMP_DIR/bws"
+    out=$("$TMP_DIR/bws" --version 2>/dev/null) || {
+        log "the downloaded binary does not run"
+        return 1
+    }
+    [[ "${out##* }" == "$version" ]] || {
+        log "the downloaded binary reports '$out', expected $version"
+        return 1
+    }
+
+    mkdir -p "$STATE_DIR"
+    [[ ! -f "$BIN" ]] || cp -p "$BIN" "$STATE_DIR/bws.prev"
+    install -m 0755 "$TMP_DIR/bws" "$BIN.new" && mv -f "$BIN.new" "$BIN"
+}
+
+# @description Check for a newer bws and install it.
+# @noargs
+# @exitcode 0 Checked (and updated if there was something to update).
+# @exitcode 1 Could not check or could not update.
+main() {
+    local arch current latest
+    case "$(uname -m)" in
+    aarch64 | arm64) arch=aarch64 ;;
+    x86_64) arch=x86_64 ;;
+    *)
+        log "no musl build for $(uname -m)"
+        return 1
+        ;;
+    esac
+
+    is_due || return 0
+    ensure_tools || return 1
+
+    TMP_DIR=$(mktemp -d) || return 1
+    trap 'rm -rf "$TMP_DIR"' EXIT
+
+    curl -fsSL --retry 2 -H 'Accept: application/vnd.github+json' \
+        -o "$TMP_DIR/releases.json" "$API_URL" || {
+        log "could not fetch the release list"
+        return 1
+    }
+    jq -e 'type == "array"' "$TMP_DIR/releases.json" >/dev/null || {
+        log "unexpected API response: $(jq -r '.message // empty' "$TMP_DIR/releases.json" 2>/dev/null)"
+        return 1
+    }
+
+    current=$(installed_version)
+    latest=$(newest_eligible "$TMP_DIR/releases.json")
+
+    if [[ -z "$latest" ]]; then
+        log "no release within the age and major-version limits"
+    elif [[ "$latest" == "$current" || "$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n 1)" != "$latest" ]]; then
+        log "bws $current is up to date"
+    else
+        log "updating bws $current -> $latest"
+        install_release "$TMP_DIR/releases.json" "$latest" "$arch" || return 1
+        log "bws $latest installed (previous kept in $STATE_DIR/bws.prev)"
+    fi
+
+    mkdir -p "$(dirname "$STAMP")" && touch "$STAMP"
+}
+
+main "$@" || log "skipped; bws was left as it was"
+exit 0
+{{ end -}}

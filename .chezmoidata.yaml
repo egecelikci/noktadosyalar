@@ -52,6 +52,15 @@ media_paths:
 termux_backup:
   commit: "d18aa628e2ae6cef1f4c6a84bf66e5b58d4ddc40"
 
+# Limits for the Android bws updater (run_after_update-bws.sh): it ignores
+# releases younger than min_age_days, which leaves time to notice a bad or
+# withdrawn release, and releases of a major version above max_major, which
+# can change the CLI. Raise max_major yourself after checking that
+# `bws secret get` still works.
+bws:
+  max_major: 2
+  min_age_days: 7
+
 # SSH commit-signing keys, one per machine. Source of truth for both
 # ~/.ssh/id_sign_ed25519.pub (this machine's key) and
 # ~/.config/git/allowed_signers (every machine trusts all of them).
