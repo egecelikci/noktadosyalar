@@ -69,4 +69,3 @@ ssh_sign_pubkeys:
   android: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF2XufuZr7u5/Yj4/qbkOBr7pbM3kCYQ6rlIKCPST5q3"
   linux: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINm7ctoYtcljx4VxOkyBR6Hd7LTeYcKXeSoCHBurN9Li"
 
-lrclib_dump_url: "https://db-dumps.lrclib.net/lrclib-db-dump-20260624T025818Z.sqlite3.gz"
