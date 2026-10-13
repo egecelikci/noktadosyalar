@@ -1,4 +1,4 @@
-#!/usr/bin/env fish
+{{ if eq .chezmoi.os "android" }}#!/data/data/com.termux/files/usr/bin/fish{{ else }}#!/usr/bin/env fish{{ end }}
 
 if type -q atuin
     if not atuin status >/dev/null 2>&1

@@ -1,4 +1,4 @@
-#!/usr/bin/env fish
+{{ if eq .chezmoi.os "android" }}#!/data/data/com.termux/files/usr/bin/fish{{ else }}#!/usr/bin/env fish{{ end }}
 
 {{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "android") }}
 # This hash ensures the script re-runs if your Bitwarden secrets change

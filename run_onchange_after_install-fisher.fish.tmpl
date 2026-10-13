@@ -1,4 +1,4 @@
-#!/usr/bin/env fish
+{{ if eq .chezmoi.os "android" }}#!/data/data/com.termux/files/usr/bin/fish{{ else }}#!/usr/bin/env fish{{ end }}
 
 # fish_plugins hash: {{ include "dot_config/private_fish/fish_plugins" | sha256sum }}
 
