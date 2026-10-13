@@ -26,8 +26,6 @@ mastercomfig/
 # Server-only configuration and credentials. None of it is used on the phone,
 # and several of these files hold secrets (tunnel credentials, service
 # passwords, the restic password).
-.config/cloudflared
-.config/navidrome
 .config/restic
 
 # Pi is not used on the phone.
@@ -43,8 +41,3 @@ install-pi-packages.fish
 {{ end }}
 
 {{ if eq .chezmoi.os "darwin" }}
-# navidrome is the beets web/Subsonic config and cloudflared is the server's
-# tunnel; neither is used on the Mac.
-.config/navidrome
-.config/cloudflared
-{{ end }}
