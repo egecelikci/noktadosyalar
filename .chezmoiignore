@@ -33,9 +33,3 @@ mastercomfig/
 install-pi-packages.fish
 {{ end }}
 
-{{ if ne .chezmoi.os "linux" }}
-# beets runs on the server only: its units run as egecelikci and read
-# ~/.config/beets (services/beets.nix and scripts/beets-upc-import.sh in the
-# nixos repo).
-.config/beets
-{{ end }}
