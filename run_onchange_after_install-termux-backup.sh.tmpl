@@ -1,0 +1,91 @@
+{{- if eq .chezmoi.os "android" -}}
+#!/data/data/com.termux/files/usr/bin/bash
+# @file install-termux-backup.sh
+# @brief Installs restic-termux-backup at the commit pinned in `.chezmoidata.yaml`.
+# @description
+#     A `run_onchange_` script: chezmoi re-runs it whenever its rendered text
+#     changes, which here means whenever `termux_backup.commit` changes. To
+#     update the phone, push to restic-termux-backup, put the new commit in
+#     `.chezmoidata.yaml`, then run `chezmoi update` on the phone.
+#
+#     The whole checkout is the pinned commit. (The `run_once_` script this
+#     replaces pinned only `install.sh`, which then downloaded `backup.fish`
+#     from `main`.) It is fetched over the SSH access to sunucu that chezmoi
+#     itself uses, which is LAN-only (`~/.ssh/config`), so the repository does
+#     not need to be public.
+#
+#     `~/.backup_env.fish` and the rclone `Drive` remote are managed by chezmoi
+#     too, so none of `install.sh`'s prompts apply here.
+#
+#     Pinned commit: {{ .termux_backup.commit }}
+
+set -euo pipefail
+
+REPO="forgejo@sunucu:egecelikci/restic-termux-backup.git"
+COMMIT="{{ .termux_backup.commit }}"
+APP_DIR="$HOME/.local/share/restic-termux-backup"
+BIN_DIR="$PREFIX/bin"
+
+# @description Install the packages `backup.fish` needs. Idempotent; this
+#     script only runs when the pin changes.
+# @noargs
+install_packages() {
+    pkg install -y fish restic rclone jq termux-api git openssh
+}
+
+# @description Check out `$COMMIT` in `$APP_DIR`, cloning on first run.
+# @noargs
+checkout_pinned() {
+    if [[ -d "$APP_DIR/.git" ]]; then
+        git -C "$APP_DIR" remote set-url origin "$REPO"
+        git -C "$APP_DIR" fetch --quiet origin
+    else
+        mkdir -p "$(dirname "$APP_DIR")"
+        git clone --quiet --no-checkout "$REPO" "$APP_DIR"
+    fi
+    git -C "$APP_DIR" -c advice.detachedHead=false checkout --quiet --force "$COMMIT"
+}
+
+# @description Install `backup.fish` and `.resticignore` from the checkout. A
+#     differing `~/.resticignore` is kept once as `~/.resticignore.bak` rather
+#     than silently replaced.
+# @noargs
+install_files() {
+    install -m 0755 "$APP_DIR/backup.fish" "$BIN_DIR/backup.fish"
+
+    if [[ -f "$HOME/.resticignore" ]] && ! cmp -s "$APP_DIR/.resticignore" "$HOME/.resticignore"; then
+        cp "$HOME/.resticignore" "$HOME/.resticignore.bak"
+        echo "restic-termux-backup: previous ~/.resticignore saved as ~/.resticignore.bak"
+    fi
+    install -m 0644 "$APP_DIR/.resticignore" "$HOME/.resticignore"
+}
+
+# @description Register the job as `install.sh` does: every 3 hours, on an
+#     unmetered network, while charging. Re-registering job 1 replaces it.
+# @noargs
+schedule_job() {
+    termux-job-scheduler \
+        --job-id 1 \
+        --script "$BIN_DIR/backup.fish" \
+        --period-ms 10800000 \
+        --network unmetered \
+        --charging true \
+        --persisted true \
+        --battery-not-low true
+}
+
+# @description Install and schedule the pinned commit.
+# @noargs
+main() {
+    echo "restic-termux-backup: installing ${COMMIT:0:8}…"
+    install_packages
+    # Opens Android's permission dialog the first time only.
+    [[ -d "$HOME/storage" ]] || termux-setup-storage
+    checkout_pinned
+    install_files
+    schedule_job
+    echo "restic-termux-backup: ${COMMIT:0:8} installed and scheduled."
+}
+
+main "$@"
+{{ end -}}

@@ -46,4 +46,10 @@ bitwarden:
 media_paths:
   linux: "/mnt/storage"
 
+# The restic-termux-backup commit the phone runs
+# (run_onchange_after_install-termux-backup.sh). To update the phone: push to
+# that repo, put the new commit here, then `chezmoi update` on the phone.
+termux_backup:
+  commit: "f40a8ebe382f1c4444d05cb0a5c671b2ec090dbf"
+
 lrclib_dump_url: "https://db-dumps.lrclib.net/lrclib-db-dump-20260624T025818Z.sqlite3.gz"
