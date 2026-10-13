@@ -27,7 +27,6 @@ mastercomfig/
 # and several of these files hold secrets (tunnel credentials, service
 # passwords, the restic password).
 .config/cloudflared
-.config/containers
 .config/navidrome
 .config/restic
 .config/sops
