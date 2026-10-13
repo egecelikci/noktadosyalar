@@ -13,15 +13,29 @@ echo "Configuring Rclone remotes…"
 
 mkdir -p ~/.config/rclone
 
-# 1. Update the Google Drive remote (This preserves the token if it exists!)
-rclone config update Drive type drive \
-    client_id '{{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value }}' \
-    client_secret '{{ (bitwardenSecrets .bitwarden.gdrive_client_secret_id).value }}'
+# Every call passes --no-output, because rclone otherwise prints the whole
+# remote, including the client secret and OAuth token, into the apply output.
 
-# 2. Configure the static HTTP remotes
-rclone config update Myrient type http url "https://myrient.erista.me"
-rclone config update "The Eye" type http url "https://beta.the-eye.eu"
-rclone config update 8BitDo type http url "https://tempfiles.8bitdo.com/SPSP/"
+# 1. Update the Google Drive remote's credentials, keeping its token. This never
+#    starts a browser login (--non-interactive); if the remote has no token yet,
+#    run `rclone config reconnect Drive:` once by hand.
+if not rclone config update Drive client_id '{{ (bitwardenSecrets .bitwarden.gdrive_client_id_id).value }}' client_secret '{{ (bitwardenSecrets .bitwarden.gdrive_client_secret_id).value }}' --non-interactive --no-output
+    echo "Drive: not updated (no token yet?). Run: rclone config reconnect Drive:"
+end
+
+# 2. Configure the static HTTP remotes: update if they exist, otherwise create.
+for remote in Myrient "The Eye" 8BitDo
+    switch $remote
+        case Myrient
+            set url "https://myrient.erista.me"
+        case "The Eye"
+            set url "https://beta.the-eye.eu"
+        case 8BitDo
+            set url "https://tempfiles.8bitdo.com/SPSP/"
+    end
+    rclone config update "$remote" type http url "$url" --no-output 2>/dev/null
+    or rclone config create "$remote" http url "$url" --no-output
+end
 
 # 3. Configure the Dufs WebDAV remote
 rclone config create dufs webdav \
@@ -29,7 +43,7 @@ rclone config create dufs webdav \
     vendor other \
     user '{{ (bitwardenSecrets .bitwarden.username_id).value }}' \
     pass '{{ (bitwardenSecrets .bitwarden.dufs_webdav_password_id).value }}' \
-    --obscure
+    --obscure --no-output
 
 echo "Rclone configuration successfully synced!"
 {{ else }}
