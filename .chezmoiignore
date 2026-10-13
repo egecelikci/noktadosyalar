@@ -39,5 +39,3 @@ install-pi-packages.fish
 # nixos repo).
 .config/beets
 {{ end }}
-
-{{ if eq .chezmoi.os "darwin" }}
