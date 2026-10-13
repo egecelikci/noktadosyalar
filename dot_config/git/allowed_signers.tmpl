@@ -1,0 +1,7 @@
+{{- /* Generated from ssh_sign_pubkeys in .chezmoidata.yaml: every machine
+       trusts all of my signing keys. Repositories with other committers carry
+       their own list (the nixos repo: /etc/nixos/allowed_signers, wired in
+       through its local git config). */ -}}
+{{ range $os, $key := .ssh_sign_pubkeys -}}
+ege@celikci.me {{ $key }}
+{{ end -}}

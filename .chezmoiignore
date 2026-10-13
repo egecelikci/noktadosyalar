@@ -1,5 +1,4 @@
 .config/rclone/rclone.conf
-.config/git/allowed_signers
 
 # Pi: per-machine session history and model cache. auth.json IS managed
 # (templated from Bitwarden Secrets Manager), so it is not ignored.

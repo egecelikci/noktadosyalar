@@ -52,4 +52,12 @@ media_paths:
 termux_backup:
   commit: "f40a8ebe382f1c4444d05cb0a5c671b2ec090dbf"
 
+# SSH commit-signing keys, one per machine. Source of truth for both
+# ~/.ssh/id_sign_ed25519.pub (this machine's key) and
+# ~/.config/git/allowed_signers (every machine trusts all of them).
+ssh_sign_pubkeys:
+  darwin: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFThAK4bQKmz31+wv5lAK5BF1QLf0CT/qhr30iPtmiGT"
+  android: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIF2XufuZr7u5/Yj4/qbkOBr7pbM3kCYQ6rlIKCPST5q3"
+  linux: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINm7ctoYtcljx4VxOkyBR6Hd7LTeYcKXeSoCHBurN9Li"
+
 lrclib_dump_url: "https://db-dumps.lrclib.net/lrclib-db-dump-20260624T025818Z.sqlite3.gz"
