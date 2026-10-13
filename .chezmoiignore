@@ -8,6 +8,10 @@
 # Team Fortress 2
 mastercomfig/
 
-{{ if ne .chezmoi.os "android" }}
-install-termux-backup.sh.tmpl
+{{ if eq .chezmoi.os "linux" }}
+# The server's restic credentials come from sops (nixos repo:
+# modules/backup.nix). .backup_env.fish is for the phone's backup.fish and the
+# Mac's migrate_hdd.fish only.
+.backup_env.fish
+.config/restic
 {{ end }}
