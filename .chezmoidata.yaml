@@ -50,7 +50,7 @@ media_paths:
 # (run_onchange_after_install-termux-backup.sh). To update the phone: push to
 # that repo, put the new commit here, then `chezmoi update` on the phone.
 termux_backup:
-  commit: "f40a8ebe382f1c4444d05cb0a5c671b2ec090dbf"
+  commit: "d18aa628e2ae6cef1f4c6a84bf66e5b58d4ddc40"
 
 # SSH commit-signing keys, one per machine. Source of truth for both
 # ~/.ssh/id_sign_ed25519.pub (this machine's key) and
