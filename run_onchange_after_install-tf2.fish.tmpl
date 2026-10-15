@@ -1,0 +1,95 @@
+{{ if eq .chezmoi.os "android" }}#!/data/data/com.termux/files/usr/bin/fish{{ else }}#!/usr/bin/env fish{{ end }}
+
+# Team Fortress 2 install: mastercomfig and the budhud HUD into `tf/custom`, and the config overrides that live in this repo.
+#
+# Everything under `tf/custom` belongs to this script:
+#
+# - mastercomfig, pinned in `.chezmoidata.yaml`, at the preset and with the addons listed there. The VPKs land in `tf/custom`, while the preset, the addon `exec` lines and the per-OS `mat_setvideomode` land in `tf/custom/comfig-custom/cfg/app`, the hook the preset VPK reads at launch.
+# - budhud as a copy, with `#users/dane_` renamed to `#users/dane`, because the HUD's `#base` includes look for the latter (Uncle Dane's layout). The copy overlaps and never deletes, so files added to the HUD survive, exactly like budhud's own updater.
+#
+# `tf/cfg/overrides` gets symlinks to `mastercomfig/` in this repo instead of copies, so edits there are live and versioned.
+#
+# chezmoi re-runs this script when its rendered contents change, which is what bumping `tf2.mastercomfig`, `tf2.budhud` or the addon list does.
+
+set -l CHEZMOI_SOURCE "{{ .chezmoi.sourceDir }}"
+
+{{ if eq .chezmoi.os "darwin" -}}
+set STEAM_LIBRARIES "$HOME/Library/Application Support/Steam Library/steamapps" "$HOME/Library/Application Support/Steam/steamapps"
+{{ else -}}
+set STEAM_LIBRARIES "$HOME/.local/share/Steam/steamapps" "$HOME/.steam/steam/steamapps"
+{{ end }}
+function find_tf2 --description 'Print the Team Fortress 2 folder, or fail when TF2 is not installed here'
+    for library in $STEAM_LIBRARIES
+        if test -d "$library/common/Team Fortress 2/tf"
+            echo "$library/common/Team Fortress 2"
+            return 0
+        end
+    end
+    return 1
+end
+
+function fetch --description 'Download a URL to a file, aborting the script on failure'
+    if not curl -fsSL --retry 3 -o "$argv[2]" "$argv[1]"
+        echo "could not download $argv[1]" >&2
+        exit 1
+    end
+end
+
+set -l tf2 (find_tf2)
+if test -z "$tf2"
+    echo "Team Fortress 2 is not installed here; nothing to do"
+    exit 0
+end
+
+# A running game keeps the old VPKs and reads HUD files on demand, so replacing them now would leave a mixed state until it restarts.
+if pgrep -f hl2 >/dev/null
+    echo "Team Fortress 2 is running; close it, then run chezmoi apply again" >&2
+    exit 1
+end
+
+set -l custom "$tf2/tf/custom"
+set -l app "$custom/comfig-custom/cfg/app"
+set -l addons{{ range $addon := .tf2.addons }} {{ $addon }}{{ end }}
+set -l release "https://github.com/mastercomfig/mastercomfig/releases/download/{{ .tf2.mastercomfig }}"
+
+mkdir -p "$app"
+
+# mastercomfig's own updater deletes the VPKs it manages before writing new ones, for the same reasons: the preset VPK used to be named `mastercomfig-low-preset.vpk`, and an addon dropped from the list would otherwise stay mounted.
+echo "Downloading mastercomfig {{ .tf2.mastercomfig }}…"
+find "$custom" -maxdepth 1 -name 'mastercomfig-*.vpk*' -delete
+fetch "$release/mastercomfig-base.vpk" "$custom/mastercomfig-base.vpk"
+for addon in $addons
+    fetch "$release/mastercomfig-addon-$addon.vpk" "$custom/mastercomfig-addon-$addon.vpk"
+end
+
+printf 'preset=%s\n' {{ .tf2.preset }} >"$app/setup_hook.cfg"
+printf 'exec addons/%s.cfg\n' $addons >"$app/addons.cfg"
+{{ with index .tf2.video_modes .chezmoi.os -}}
+printf 'mat_setvideomode {{ . }}\n' >"$app/pre_init.cfg"
+{{ else -}}
+rm -f "$app/pre_init.cfg"
+{{ end }}
+echo "Installing budhud…"
+set -l staging (mktemp -d)
+fetch "https://codeload.github.com/rbjaxter/budhud/tar.gz/{{ .tf2.budhud }}" "$staging/budhud.tar.gz"
+mkdir -p "$staging/budhud"
+tar -xzf "$staging/budhud.tar.gz" -C "$staging/budhud" --strip-components=1
+mv "$staging/budhud/#users/dane_" "$staging/budhud/#users/dane"
+mkdir -p "$custom/budhud"
+cp -Rf "$staging/budhud/." "$custom/budhud/"
+rm -rf "$staging" "$custom/budhud/#users/dane_"
+
+echo "Linking config overrides to $tf2/tf/cfg/overrides…"
+set -l overrides "$tf2/tf/cfg/overrides"
+mkdir -p "$overrides"
+
+# A link whose source file was dropped from the repo would only produce an exec error in the console.
+for link in (find "$overrides" -maxdepth 1 -name '*.cfg' -type l)
+    if not test -e "$link"
+        rm -f "$link"
+    end
+end
+
+ln -sf "$CHEZMOI_SOURCE/mastercomfig/"*.cfg "$overrides/"
+
+echo "Team Fortress 2 is set up"

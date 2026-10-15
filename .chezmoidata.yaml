@@ -40,6 +40,28 @@ bws:
   max_major: 2
   min_age_days: 7
 
+# Team Fortress 2 (run_onchange_after_install-tf2). mastercomfig and budhud are pinned
+# so that a chezmoi run is reproducible; changing either pin, or the addon list, is
+# what makes chezmoi reinstall them.
+tf2:
+  mastercomfig: "9.100.1"
+  preset: low
+  # null-canceling-movement is deliberately missing: the NuPhy Air60 HE resolves
+  # SOCD (last input priority) in firmware, which the in-game script only duplicates.
+  addons:
+    - no-pyroland
+    - no-soundscapes
+    - no-tutorial
+    - no-footsteps
+    - flat-mouse
+    - transparent-viewmodels
+  # budhud master at 2026-10-01; the last release tag is 2511_01
+  budhud: "a1b348d64ae72d4d2e78e399d5561161ab78ebf7"
+  # mat_setvideomode per OS; an OS missing here keeps whatever config.cfg already has
+  video_modes:
+    darwin: "1280 800 0"
+    linux: "1440 900 0"
+
 # SSH commit-signing keys, one per machine. Source of truth for both
 # ~/.ssh/id_sign_ed25519.pub (this machine's key) and
 # ~/.config/git/allowed_signers (every machine trusts all of them).
