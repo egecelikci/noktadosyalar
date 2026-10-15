@@ -20,11 +20,26 @@
       ]
     }
 {{- else if eq .chezmoi.os "linux" }}
-    "playwright": {
-      "url": "http://localhost:8931/mcp"
-    },
     "nixos": {
       "command": "/etc/profiles/per-user/egecelikci/bin/mcp-nixos"
+    },
+    "rea": {
+      "command": "/etc/profiles/per-user/egecelikci/bin/npx",
+      "args": [
+        "-y",
+        "rea-agents@6.2.0",
+        "mcp"
+      ],
+      "env": {
+        "PATH": "/etc/profiles/per-user/egecelikci/bin:/run/current-system/sw/bin"
+      }
+    },
+    "forgejo": {
+      "command": "/etc/profiles/per-user/egecelikci/bin/forgejo-mcp",
+      "args": [
+        "--transport",
+        "stdio"
+      ]
     }
 {{- end }}
   }
