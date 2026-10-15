@@ -10,6 +10,13 @@ set $mod Mod4
 set $term foot
 set $menu fuzzel
 
+# Turkish Q. The session variable XKB_DEFAULT_LAYOUT is also set system-wide, but that
+# only covers sessions that inherit it; this makes sway's own keyboards Turkish
+# regardless.
+input "type:keyboard" {
+  xkb_layout tr
+}
+
 bindsym $mod+Return exec $term
 bindsym $mod+d exec $menu
 bindsym $mod+Shift+q kill
