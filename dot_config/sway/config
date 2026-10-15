@@ -4,7 +4,13 @@
 # Super+Return  terminal (foot)
 # Super+D       launcher (fuzzel)
 # Super+Shift+Q close window
-# Super+Shift+E leave sway (back to the login screen)
+# Super+Shift+E leave sway (back to the tty login prompt)
+
+# The NixOS sway module's drop-in: dbus-update-activation-environment plus the
+# systemctl --user import-environment and sway-session.target start. A custom config
+# silently drops them unless it includes the directory, and then portals and systemd
+# user services never see WAYLAND_DISPLAY.
+include /etc/sway/config.d/*
 
 set $mod Mod4
 set $term foot
