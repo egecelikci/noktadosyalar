@@ -1,45 +1,39 @@
-#!/bin/sh
-# @file menu
-# @brief Opens a fuzzel picker, or closes the one that is already open.
-# @description
-#     The one entry point for every fuzzel-based picker in the sway config, so they all behave the same way:
-#     the chord that opens a picker closes it again, and pressing a different picker's chord while one is open only closes the open one.
-#     Holding a chord does nothing extra, because the sway bindings that call this use `--no-repeat`; this script only decides between opening and closing.
+#!/usr/bin/env fish
+# # menu
 #
-#     Pickers:
+# Opens a fuzzel picker, or closes the one that is already open.
 #
-#     - `launcher` — fuzzel's own application launcher (`Super+Space`).
-#     - `clipboard` — clipboard history from cliphist (`Super+C`); the chosen entry goes back on the clipboard.
-set -eu
+# The one entry point for every fuzzel-based picker in the sway config, so they all behave the same way: the chord that opens a picker closes it again, and pressing another picker's chord while one is open only closes the open one.
+# Holding a chord does nothing extra, because the sway bindings that call this use `--no-repeat`; this script only decides between opening and closing.
+#
+# Pickers:
+#
+# - `launcher` — fuzzel's own application launcher (`Super+Space`).
+# - `clipboard` — clipboard history from cliphist (`Super+C`); the chosen entry goes back on the clipboard.
 
-# @description Close fuzzel if it is open.
-# @noargs
-# @exitcode 0 A fuzzel was open and is now closed.
-# @exitcode 1 No fuzzel was open.
-close_open() {
+function close_open --description 'Close fuzzel if it is open; succeeds only when there was one to close'
     pkill -x fuzzel
-}
+end
 
-# @description Show the clipboard history and put the chosen entry back on the clipboard.
-# @noargs
-# @exitcode 0 An entry was chosen, or the picker was dismissed with Escape.
-clipboard() {
+function clipboard --description 'Show the clipboard history and put the chosen entry back on the clipboard'
     # Escape makes fuzzel exit non-zero with no output; that is a normal "never mind", not an error.
-    choice="$(cliphist list | fuzzel --dmenu --prompt 'clipboard> ')" || exit 0
-    printf '%s\n' "$choice" | cliphist decode | wl-copy
-}
+    set -l choice (cliphist list | fuzzel --dmenu --prompt 'clipboard> ')
+    or return 0
+    printf '%s\n' $choice | cliphist decode | wl-copy
+end
 
-case "${1:-}" in
-launcher | clipboard) ;;
-*)
-    echo "usage: menu launcher|clipboard" >&2
-    exit 2
-    ;;
-esac
+switch "$argv[1]"
+    case launcher clipboard
+    case '*'
+        echo "usage: menu launcher|clipboard" >&2
+        exit 2
+end
 
-close_open && exit 0
+close_open; and exit 0
 
-case "$1" in
-launcher) exec fuzzel ;;
-clipboard) clipboard ;;
-esac
+switch $argv[1]
+    case launcher
+        exec fuzzel
+    case clipboard
+        clipboard
+end

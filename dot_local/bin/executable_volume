@@ -1,47 +1,42 @@
-#!/bin/sh
-# @file volume
-# @brief Changes the default output's volume and shows the new level as a mako notification.
-# @description
-#     Called by the sway media mode and the keyboard's volume keys (~/.config/sway/config).
-#     The level is shown as a notification with a progress value, which mako draws as a bar, so no separate OSD program is needed.
-#     Each call replaces the previous volume notification instead of stacking a new one: its id is kept in `$XDG_RUNTIME_DIR/volume-notification`.
-#     The volume is capped at 100%, because PipeWire otherwise lets it climb into distortion.
-set -eu
+#!/usr/bin/env fish
+# # volume
+#
+# Changes the default output's volume and shows the new level as a mako notification.
+#
+# Called by the keyboard's volume keys (the NuPhy Fn layer) through `~/.config/sway/config`, and by waybar's scroll on the volume module.
+# The level is shown as a notification with a progress value, which mako draws as a bar, so no separate OSD program is needed.
+# Each call replaces the previous volume notification instead of stacking a new one: its id is kept in `$XDG_RUNTIME_DIR/volume-notification`.
+# The volume is capped at 100%, because PipeWire otherwise lets it climb into distortion.
 
-ID_FILE="${XDG_RUNTIME_DIR:-/tmp}/volume-notification"
-SINK=@DEFAULT_AUDIO_SINK@
+set -l id_file (set -q XDG_RUNTIME_DIR; and echo $XDG_RUNTIME_DIR; or echo /tmp)/volume-notification
+set -l sink @DEFAULT_AUDIO_SINK@
 
-# @description Apply one change to the default output.
-# @arg $1 string `up`, `down` or `mute`.
-# @exitcode 0 Changed.
-# @exitcode 2 Unknown argument.
-change() {
-    case "$1" in
-    up) wpctl set-volume -l 1.0 "$SINK" 5%+ ;;
-    down) wpctl set-volume "$SINK" 5%- ;;
-    mute) wpctl set-mute "$SINK" toggle ;;
-    *)
-        echo "usage: volume up|down|mute" >&2
-        exit 2
-        ;;
-    esac
-}
+function change --description 'Apply one change (up, down or mute) to the default output' --argument-names action sink
+    switch $action
+        case up
+            wpctl set-volume -l 1.0 $sink 5%+
+        case down
+            wpctl set-volume $sink 5%-
+        case mute
+            wpctl set-mute $sink toggle
+        case '*'
+            echo "usage: volume up|down|mute" >&2
+            exit 2
+    end
+end
 
-# @description Show the current level, replacing the previous volume notification.
-# @noargs
-show() {
+function show --description 'Show the current level, replacing the previous volume notification' --argument-names sink id_file
     # `wpctl get-volume` prints `Volume: 0.45`, with ` [MUTED]` appended when muted.
-    state="$(wpctl get-volume "$SINK")"
-    percent="$(echo "$state" | awk '{ printf "%d", $2 * 100 + 0.5 }')"
-    title="Volume ${percent}%"
-    case "$state" in *MUTED*) title="Muted (${percent}%)" ;; esac
+    set -l state (wpctl get-volume $sink)
+    set -l percent (math --scale=0 "round("(string split ' ' $state)[2]" * 100)")
+    set -l title "Volume $percent%"
+    string match -q '*MUTED*' $state; and set title "Muted ($percent%)"
 
-    replace=""
-    if [ -s "$ID_FILE" ]; then replace="--replace-id=$(cat "$ID_FILE")"; fi
-    # shellcheck disable=SC2086 # $replace is deliberately empty or exactly one word.
+    set -l replace
+    test -s $id_file; and set replace --replace-id=(cat $id_file)
     notify-send --app-name=volume --expire-time=1500 --print-id $replace \
-        --hint="int:value:${percent}" "$title" >"$ID_FILE"
-}
+        --hint=int:value:$percent $title >$id_file
+end
 
-change "${1:-}"
-show
+change "$argv[1]" $sink
+show $sink $id_file
