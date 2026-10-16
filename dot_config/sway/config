@@ -70,7 +70,7 @@ bindsym --no-repeat $mod+Return exec $term
 # ~/.local/bin/menu is shared by every fuzzel picker (launcher, clipboard, this cheatsheet), so they all open and close the same way.
 #: Open or close the app launcher
 bindsym --no-repeat $mod+space exec ~/.local/bin/menu launcher
-#: Search every key binding, and run the one you pick (this list)
+#: Search all key bindings (this list)
 bindsym --no-repeat $mod+Escape exec ~/.local/bin/menu keys
 #: Close the focused window
 bindsym $mod+Shift+q kill
@@ -214,7 +214,7 @@ mode "screenshot" {
   #: Cancel
   bindsym Escape mode "default"
 }
-#: Screenshot mode: then W window, A all, D drag a region
+#: Screenshot mode (then W, A or D)
 bindsym --no-repeat $mod+Shift+s mode "screenshot"
 
 ### Media
@@ -249,7 +249,7 @@ mode "notifications" {
   #: Cancel
   bindsym Escape mode "default"
 }
-#: Notifications mode: then D dismiss, Shift+D all, Return act, U undo
+#: Notifications mode (then D, Shift+D, Enter or U)
 bindsym $mod+n mode "notifications"
 
 ### Passthrough: every key goes to the focused window, Super included, until the same chord again.
@@ -258,7 +258,7 @@ mode "passthrough" {
   #: Leave passthrough
   bindsym $mod+Shift+p mode "default"
 }
-#: Passthrough mode, for games: every key goes to the app
+#: Passthrough: every key goes to the app (games)
 bindsym $mod+Shift+p mode "passthrough"
 
 ### Bar: waybar, configured in ~/.config/waybar (dot_config/waybar in the chezmoi source).
