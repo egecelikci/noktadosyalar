@@ -1,0 +1,3 @@
+{{- /* ~/.config/motif points at the local motif checkout, so the desktop configs can include its generated color fragments (sway/, waybar/, mako/, foot/, fuzzel/) while motif is being worked on: `deno task gen` in ~/Git/motif, then Super+Shift+R, and the new colors are live, with nothing committed anywhere.
+       Later, once motif is committed and published, the nixos repo can deliver the same directory from its `motif` flake input instead (parked in its git stash, issue #29); remove this file then. */ -}}
+{{ .chezmoi.homeDir }}/Git/motif

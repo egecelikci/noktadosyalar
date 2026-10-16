@@ -12,6 +12,9 @@ mastercomfig/
 
 {{ if ne .chezmoi.os "linux" }}
 # The sway desktop and what it calls exist on the Linux machine only.
+.config/motif
+.config/fuzzel
+.config/foot
 .config/sway
 .config/waybar
 .config/mako
