@@ -5,10 +5,10 @@
 # The mental model, one rule per modifier:
 # - `Super+key` does a thing: focus, open, switch, toggle.
 # - `Super+Shift+key` does the same thing to the focused window, or the bigger version of it: move instead of focus, send instead of switch, close, reload, exit, apply.
-#   The one exception is screenshots, which take `Super+Shift` plus W, A or D, laid out like a game's WASD keys (see Screenshots below).
+#   Screenshots are `Super+Shift+S` and then W, A or D, laid out like a game's WASD keys (see Screenshots below).
 # - `Super+Ctrl+key` is the session itself: lock.
 # - `h j k l` are left, down, up, right everywhere, as in vim; the arrow keys do the same.
-# - A mode (`Super+R` resize, `Super+N` notifications) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
+# - A mode (`Super+R` resize, `Super+N` notifications, `Super+Shift+S` screenshot) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
 # - Volume and play/pause are the keyboard's job, not sway's: they are on the NuPhy Fn layer, which sends the media keys handled under Media below.
 
 # The NixOS sway module's drop-in: dbus-update-activation-environment, plus the systemctl --user import-environment and sway-session.target start.
@@ -63,8 +63,8 @@ exec swayidle -w \
 
 ### Basics
 bindsym $mod+Return exec $term
-# Space, like Spotlight or Raycast on macOS.
-bindsym $mod+space exec $menu
+# Space, like Spotlight or Raycast on macOS, and the same chord closes it again: `pkill` succeeds only when fuzzel is already open, so the second press closes instead of opening a second copy.
+bindsym $mod+space exec pkill -x fuzzel || $menu
 bindsym $mod+Shift+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
@@ -160,18 +160,27 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-### Screenshots: one chord, laid out like WASD.
-#   Super+Shift+W  a window: click the one you want
-#   Super+Shift+A  all of the screen
-#   Super+Shift+D  drag a region with the mouse
+### Screenshots: Super+Shift+S, then a letter laid out like WASD.
+# Keep Super+Shift held and add the letter, or let go and press it alone; both work.
+#   W  a window: click the one you want
+#   A  all of the screen
+#   D  drag a region with the mouse
+# Escape cancels; until a letter or Escape comes, the bar shows "screenshot" and the other keys do nothing.
 # Every screenshot is both copied to the clipboard and saved to ~/Pictures/Screenshots, so there is no second choice to make; mako confirms each one.
 # grimshot (grim + slurp + swaymsg underneath) does the capturing; `savecopy` is its save-and-copy action.
 # The board has no Print key, which is why these are chords.
 set $shot mkdir -p ~/Pictures/Screenshots && grimshot --notify savecopy
 set $shotfile ~/Pictures/Screenshots/$(date +%F_%H-%M-%S).png
-bindsym $mod+Shift+w exec $shot window $shotfile
-bindsym $mod+Shift+a exec $shot output $shotfile
-bindsym $mod+Shift+d exec $shot area $shotfile
+mode "screenshot" {
+  bindsym w exec $shot window $shotfile, mode "default"
+  bindsym a exec $shot output $shotfile, mode "default"
+  bindsym d exec $shot area $shotfile, mode "default"
+  bindsym $mod+Shift+w exec $shot window $shotfile, mode "default"
+  bindsym $mod+Shift+a exec $shot output $shotfile, mode "default"
+  bindsym $mod+Shift+d exec $shot area $shotfile, mode "default"
+  bindsym Escape mode "default"
+}
+bindsym $mod+Shift+s mode "screenshot"
 
 ### Media
 # Super+M opens the mixer (wiremix, in a floating terminal): per-app volume, output and input devices.
