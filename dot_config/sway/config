@@ -10,6 +10,11 @@
 # - `h j k l` are left, down, up, right everywhere, as in vim; the arrow keys do the same.
 # - A mode (`Super+R` resize, `Super+N` notifications, `Super+Shift+S` screenshot) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
 # - Volume and play/pause are the keyboard's job, not sway's: they are on the NuPhy Fn layer, which sends the media keys handled under Media below.
+#
+# Cheatsheet: a line starting with `#:` directly above a binding is that binding's one-line description.
+# `Super+Escape` lists every binding with its `#:` line in fuzzel (~/.local/bin/menu keys), and picking a row runs it.
+# Consecutive bindings with the same `#:` line show as one row, which is why the line is only written once above a group.
+# A binding without a `#:` line still appears, described by its section title.
 
 # The NixOS sway module's drop-in: dbus-update-activation-environment, plus the systemctl --user import-environment and sway-session.target start.
 # A custom config silently drops them unless it includes the directory, and then portals and systemd user services never see WAYLAND_DISPLAY.
@@ -62,26 +67,36 @@ exec swayidle -w \
   before-sleep '$lock'
 
 ### Basics
+#: Open a terminal (foot)
 bindsym --no-repeat $mod+Return exec $term
 # Space, like Spotlight or Raycast on macOS; pressing it again closes the launcher.
-# ~/.local/bin/menu is shared by every fuzzel picker (also Super+C), so they all open and close the same way.
+# ~/.local/bin/menu is shared by every fuzzel picker (launcher, clipboard, this cheatsheet), so they all open and close the same way.
+#: Open or close the app launcher
 bindsym --no-repeat $mod+space exec ~/.local/bin/menu launcher
+#: Search every key binding, and run the one you pick (this list)
+bindsym --no-repeat $mod+Escape exec ~/.local/bin/menu keys
+#: Close the focused window
 bindsym $mod+Shift+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
 # R for reload: re-reads this file, restarts waybar, reloads mako. Open windows are untouched.
+#: Reload sway, waybar and mako after editing a config
 bindsym $mod+Shift+r reload
 # C for chezmoi: `chezmoi apply` in a floating terminal, then a reload.
 # Rarely needed, because these configs are symlinks into the chezmoi source and need no apply; it is for the files chezmoi still copies (templates, scripts in ~/.local/bin) and for pulling in changes made on another machine.
 # The terminal stays open until Enter, so a question from chezmoi (a file changed on both sides) can be answered and its output read.
 # fish rather than sh, because fish's config.fish is what exports BWS_ACCESS_TOKEN, which the Bitwarden-backed templates need.
+#: Run chezmoi apply, then reload
 bindsym --no-repeat $mod+Shift+c exec $term --app-id=chezmoi fish -c 'chezmoi apply -v; and swaymsg reload; echo; echo "Enter to close"; read'
 for_window [app_id="chezmoi"] floating enable, resize set 1000 600
+#: Leave sway (asks first)
 bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
 # L for lock.
+#: Lock the screen
 bindsym $mod+Ctrl+$right exec $lock
 
 ### Focus and move
+#: Focus the window left, down, up or right
 bindsym $mod+$left focus left
 bindsym $mod+$down focus down
 bindsym $mod+$up focus up
@@ -91,6 +106,7 @@ bindsym $mod+Down focus down
 bindsym $mod+Up focus up
 bindsym $mod+Right focus right
 
+#: Move the window left, down, up or right
 bindsym $mod+Shift+$left move left
 bindsym $mod+Shift+$down move down
 bindsym $mod+Shift+$up move up
@@ -101,6 +117,7 @@ bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
 ### Workspaces: Super+N goes there, Super+Shift+N sends the window there.
+#: Go to workspace 1–10
 bindsym $mod+1 workspace number 1
 bindsym $mod+2 workspace number 2
 bindsym $mod+3 workspace number 3
@@ -111,6 +128,7 @@ bindsym $mod+7 workspace number 7
 bindsym $mod+8 workspace number 8
 bindsym $mod+9 workspace number 9
 bindsym $mod+0 workspace number 10
+#: Send the window to workspace 1–10
 bindsym $mod+Shift+1 move container to workspace number 1
 bindsym $mod+Shift+2 move container to workspace number 2
 bindsym $mod+Shift+3 move container to workspace number 3
@@ -121,33 +139,45 @@ bindsym $mod+Shift+7 move container to workspace number 7
 bindsym $mod+Shift+8 move container to workspace number 8
 bindsym $mod+Shift+9 move container to workspace number 9
 bindsym $mod+Shift+0 move container to workspace number 10
-# Back to the workspace you came from.
+#: Back to the workspace you came from
 bindsym $mod+Tab workspace back_and_forth
 
 ### Layout
-# Where the next window opens: beside (b) or below (v) the focused one.
+#: Open the next window beside the focused one
 bindsym $mod+b splith
+#: Open the next window below the focused one
 bindsym $mod+v splitv
-# Stacking, tabbed, or back to tiled.
+#: Stack the windows here (one title bar each)
 bindsym $mod+s layout stacking
+#: Tab the windows here
 bindsym $mod+w layout tabbed
+#: Back to tiled, or flip between side by side and stacked
 bindsym $mod+e layout toggle split
+#: Fullscreen on or off
 bindsym $mod+f fullscreen
+#: Float the window, or tile it again
 bindsym $mod+Shift+space floating toggle
-# T for toggle: move focus between the tiled windows and the floating ones (Super+Space used to do this in sway's default config; it now opens the launcher).
+# T for toggle: Super+Space did this in sway's default config; it now opens the launcher.
+#: Move focus between tiled and floating windows
 bindsym $mod+t focus mode_toggle
+#: Focus the parent container
 bindsym $mod+a focus parent
 
 ### Scratchpad: a hidden workspace for windows you summon and dismiss.
 # On Turkish Q, `minus` is the key right of `*` on the number row (the `=` keycap on this board).
+#: Hide the window in the scratchpad
 bindsym $mod+Shift+minus move scratchpad
+#: Show or hide the scratchpad window
 bindsym $mod+minus scratchpad show
 
-### Clipboard history: Super+C, pick an entry in fuzzel, and it is on the clipboard again; Super+C again closes it, like the launcher.
+### Clipboard history
+# Super+C again closes it, like the launcher; images show as thumbnails.
+#: Clipboard history: pick an entry to copy it again
 bindsym --no-repeat $mod+c exec ~/.local/bin/menu clipboard
 
 ### Resize: Super+R, then hjkl or arrows, then Return or Escape.
 mode "resize" {
+  #: Shrink or grow the window
   bindsym $left resize shrink width 10px
   bindsym $down resize grow height 10px
   bindsym $up resize shrink height 10px
@@ -156,16 +186,15 @@ mode "resize" {
   bindsym Down resize grow height 10px
   bindsym Up resize shrink height 10px
   bindsym Right resize grow width 10px
+  #: Done resizing
   bindsym Return mode "default"
   bindsym Escape mode "default"
 }
+#: Resize mode
 bindsym $mod+r mode "resize"
 
 ### Screenshots: Super+Shift+S, then a letter laid out like WASD.
 # Keep Super+Shift held and add the letter, or let go and press it alone; both work.
-#   W  a window: click the one you want
-#   A  all of the screen
-#   D  drag a region with the mouse
 # Escape cancels; until a letter or Escape comes, the bar shows "screenshot" and the other keys do nothing.
 # Every screenshot is both copied to the clipboard and saved to ~/Pictures/Screenshots, so there is no second choice to make; mako confirms each one.
 # ~/.local/bin/screenshot does the capturing (grimshot: grim + slurp + swaymsg underneath) and lets only one run at a time.
@@ -173,58 +202,72 @@ bindsym $mod+r mode "resize"
 # The board has no Print key, which is why these are chords.
 set $shot ~/.local/bin/screenshot
 mode "screenshot" {
+  #: Screenshot a window (click it)
   bindsym --no-repeat w exec $shot window, mode "default"
+  #: Screenshot all of the screen
   bindsym --no-repeat a exec $shot screen, mode "default"
+  #: Screenshot a region (drag it)
   bindsym --no-repeat d exec $shot area, mode "default"
+  #: Screenshot a window (click it)
   bindsym --no-repeat $mod+Shift+w exec $shot window, mode "default"
+  #: Screenshot all of the screen
   bindsym --no-repeat $mod+Shift+a exec $shot screen, mode "default"
+  #: Screenshot a region (drag it)
   bindsym --no-repeat $mod+Shift+d exec $shot area, mode "default"
+  #: Cancel
   bindsym Escape mode "default"
 }
+#: Screenshot mode: then W window, A all, D drag a region
 bindsym --no-repeat $mod+Shift+s mode "screenshot"
 
 ### Media
-# Super+M opens the mixer (wiremix, in a floating terminal): per-app volume, output and input devices.
+#: Open the mixer (per-app volume, devices)
 bindsym --no-repeat $mod+m exec $term --app-id=mixer wiremix
 for_window [app_id="mixer"] floating enable, resize set 900 600
 
 # Volume and playback come from the keyboard: the NuPhy Fn layer sends these media keys, sway acts on them, and they keep working on the lock screen.
 # Volume changes show as a mako notification with a level bar, through ~/.local/bin/volume.
+#: Volume up, down, mute (keyboard media keys)
 bindsym --locked XF86AudioRaiseVolume exec $volume up
 bindsym --locked XF86AudioLowerVolume exec $volume down
 bindsym --locked XF86AudioMute exec $volume mute
+#: Microphone mute (keyboard media key)
 bindsym --locked XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+#: Play/pause, next, previous (keyboard media keys)
 bindsym --locked XF86AudioPlay exec playerctl play-pause
 bindsym --locked XF86AudioPause exec playerctl play-pause
 bindsym --locked XF86AudioNext exec playerctl next
 bindsym --locked XF86AudioPrev exec playerctl previous
 
-### Notifications: Super+N, then
-#   d        dismiss the newest
-#   Shift+d  dismiss all
-#   Return   act on the newest (opens the chat, the link, …) and dismiss it
-#   u        bring back the last dismissed one ("undo")
-# (also from emersion's config)
+### Notifications: Super+N, then a letter (from emersion's config).
 mode "notifications" {
+  #: Dismiss the newest notification
   bindsym d exec makoctl dismiss, mode "default"
+  #: Dismiss all notifications
   bindsym Shift+d exec makoctl dismiss --all, mode "default"
+  #: Act on the newest (open the chat, the link…) and dismiss it
   bindsym Return exec makoctl invoke && makoctl dismiss, mode "default"
+  #: Bring back the last dismissed notification
   bindsym u exec makoctl restore, mode "default"
+  #: Cancel
   bindsym Escape mode "default"
 }
+#: Notifications mode: then D dismiss, Shift+D all, Return act, U undo
 bindsym $mod+n mode "notifications"
 
-### Passthrough: Super+Shift+P hands every key to the focused window, Super included, until the same chord again.
+### Passthrough: every key goes to the focused window, Super included, until the same chord again.
 # For games and VMs that want Super for themselves; the bar shows "passthrough" while it is on.
 mode "passthrough" {
+  #: Leave passthrough
   bindsym $mod+Shift+p mode "default"
 }
+#: Passthrough mode, for games: every key goes to the app
 bindsym $mod+Shift+p mode "passthrough"
 
 ### Bar: waybar, configured in ~/.config/waybar (dot_config/waybar in the chezmoi source).
 # Started from here rather than as a systemd service so that `Super+Shift+R` restarts it with the rest of the config.
-# Super+Shift+B hides and shows it.
 bar {
   swaybar_command waybar
 }
+#: Hide or show the bar
 bindsym $mod+Shift+b exec pkill -SIGUSR1 waybar

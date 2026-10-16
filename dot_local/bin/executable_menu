@@ -10,6 +10,7 @@
 #
 # - `launcher` — fuzzel's own application launcher (`Super+Space`).
 # - `clipboard` — clipboard history from cliphist (`Super+C`); the chosen entry goes back on the clipboard.
+# - `keys` — every sway key binding with its `#:` description from ~/.config/sway/config (`Super+Escape`); picking one runs it.
 
 function close_open --description 'Close fuzzel if it is open; succeeds only when there was one to close'
     pkill -x fuzzel
@@ -43,10 +44,100 @@ function clipboard --description 'Show the clipboard history, images as thumbnai
     printf '%s\n' $entries[(math $choice + 1)] | cliphist decode | wl-copy
 end
 
+
+function keys --description 'List every sway binding with its `#:` description, and run the one that is picked'
+    # Read the config sway is using, so the list can never drift from the actual bindings.
+    set -l vars
+    set -l values
+    set -l section
+    set -l desc
+    set -l mode
+    # One row per group of consecutive bindings that share a description.
+    set -l row_desc
+    set -l row_mode
+    set -l row_combos
+    set -l row_command
+
+    for line in (string trim -- (cat ~/.config/sway/config))
+        switch $line
+            case 'set $*'
+                # `set $mod Mod4` is remembered so `$mod+h` can be shown as `Super+h`.
+                set -l parts (string split --max 2 ' ' -- $line)
+                set -a vars $parts[2]
+                set -a values $parts[3]
+            case '### *'
+                set section (string replace -r '^### ([^:.]*).*' '$1' -- $line)
+                set desc
+            case '#:*'
+                set desc (string replace -r '^#:\s*' '' -- $line)
+            case '#*' ''
+            case 'mode "*" {'
+                set mode (string replace -r '^mode "([^"]+)".*' '$1' -- $line)
+            case '}'
+                set mode
+            case 'bindsym *'
+                set -l words (string split ' ' -- $line)
+                # Step over flags such as --no-repeat and --locked to reach the key combo.
+                set -l i 2
+                while string match -q -- '--*' $words[$i]
+                    set i (math $i + 1)
+                end
+                set -l combo $words[$i]
+                for n in (seq (count $vars))
+                    set combo (string replace -a -- $vars[$n] $values[$n] $combo)
+                end
+                set combo (string replace -a Mod4 Super -- $combo)
+                set -l what $desc
+                test -n "$what"; or set what $section
+                set -l last (count $row_desc)
+                if test $last -gt 0; and test "$row_desc[$last]" = "$what"; and test "$row_mode[$last]" = "$mode"
+                    set row_combos[$last] "$row_combos[$last] $combo"
+                    # A group runs nothing when picked: which of its keys was meant is unknown.
+                    set row_command[$last] ''
+                else
+                    set -a row_desc $what
+                    set -a row_mode "$mode"
+                    set -a row_combos $combo
+                    set -a row_command (string join ' ' -- $words[(math $i + 1)..-1])
+                end
+            case '*'
+                # Any other statement ends the description above it.
+                set desc
+        end
+    end
+
+    set -l rows
+    for n in (seq (count $row_desc))
+        set -l combos (string split ' ' -- $row_combos[$n])
+        # `Super+h Super+j Super+k` reads better as `Super+h/j/k`.
+        set -l shown $combos[1]
+        if test (count $combos) -gt 1
+            set -l prefix (string replace -r '[^+]*$' '' -- $combos[1])
+            set -l tails (string replace -- $prefix '' $combos)
+            if test (count (string match -- "$prefix*" $combos)) -eq (count $combos)
+                set shown $prefix(string join / -- $tails)
+            else
+                set shown (string join ', ' -- $combos)
+            end
+        end
+        set -l where
+        test -n "$row_mode[$n]"; and set where "in $row_mode[$n] mode: "
+        set -a rows (printf '%-28s %s%s' $shown $where $row_desc[$n])
+    end
+
+    set -l choice (printf '%s\n' $rows | fuzzel --dmenu --index --prompt 'keys> ' --width 100 --lines 20)
+    or return 0
+    set -l n (math $choice + 1)
+    # Picking a row runs that binding, so the list doubles as a command palette; bindings that only exist inside a mode are not run from here.
+    if test -n "$row_command[$n]"; and test -z "$row_mode[$n]"
+        swaymsg -- $row_command[$n] >/dev/null
+    end
+end
+
 switch "$argv[1]"
-    case launcher clipboard
+    case launcher clipboard keys
     case '*'
-        echo "usage: menu launcher|clipboard" >&2
+        echo "usage: menu launcher|clipboard|keys" >&2
         exit 2
 end
 
@@ -57,4 +148,6 @@ switch $argv[1]
         exec fuzzel
     case clipboard
         clipboard
+    case keys
+        keys
 end
