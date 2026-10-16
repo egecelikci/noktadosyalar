@@ -1,0 +1,47 @@
+#!/bin/sh
+# @file volume
+# @brief Changes the default output's volume and shows the new level as a mako notification.
+# @description
+#     Called by the sway media mode and the keyboard's volume keys (~/.config/sway/config).
+#     The level is shown as a notification with a progress value, which mako draws as a bar, so no separate OSD program is needed.
+#     Each call replaces the previous volume notification instead of stacking a new one: its id is kept in `$XDG_RUNTIME_DIR/volume-notification`.
+#     The volume is capped at 100%, because PipeWire otherwise lets it climb into distortion.
+set -eu
+
+ID_FILE="${XDG_RUNTIME_DIR:-/tmp}/volume-notification"
+SINK=@DEFAULT_AUDIO_SINK@
+
+# @description Apply one change to the default output.
+# @arg $1 string `up`, `down` or `mute`.
+# @exitcode 0 Changed.
+# @exitcode 2 Unknown argument.
+change() {
+    case "$1" in
+    up) wpctl set-volume -l 1.0 "$SINK" 5%+ ;;
+    down) wpctl set-volume "$SINK" 5%- ;;
+    mute) wpctl set-mute "$SINK" toggle ;;
+    *)
+        echo "usage: volume up|down|mute" >&2
+        exit 2
+        ;;
+    esac
+}
+
+# @description Show the current level, replacing the previous volume notification.
+# @noargs
+show() {
+    # `wpctl get-volume` prints `Volume: 0.45`, with ` [MUTED]` appended when muted.
+    state="$(wpctl get-volume "$SINK")"
+    percent="$(echo "$state" | awk '{ printf "%d", $2 * 100 + 0.5 }')"
+    title="Volume ${percent}%"
+    case "$state" in *MUTED*) title="Muted (${percent}%)" ;; esac
+
+    replace=""
+    if [ -s "$ID_FILE" ]; then replace="--replace-id=$(cat "$ID_FILE")"; fi
+    # shellcheck disable=SC2086 # $replace is deliberately empty or exactly one word.
+    notify-send --app-name=volume --expire-time=1500 --print-id $replace \
+        --hint="int:value:${percent}" "$title" >"$ID_FILE"
+}
+
+change "${1:-}"
+show

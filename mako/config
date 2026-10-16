@@ -1,0 +1,35 @@
+# mako, the notification daemon. `man 5 mako` lists every key.
+# ~/.config/mako is a symlink to this directory in the chezmoi source; `Super+Shift+C` reloads it (`exec_always makoctl reload` in the sway config).
+# Colours follow the sway config: #1d1f21 background, #5f5aad accent (the focused-window border).
+
+font=sans 11
+background-color=#1d1f21
+text-color=#c5c8c6
+border-color=#5f5aad
+border-size=2
+border-radius=6
+padding=10
+width=360
+# Top right, under waybar.
+anchor=top-right
+margin=10
+# Ordinary notifications go away by themselves after 5 seconds; Super+N, u brings the last one back.
+default-timeout=5000
+# The bar drawn for a notification that carries a progress value (the volume level, from ~/.local/bin/volume).
+progress-color=over #5f5aad
+
+# Collapsed notifications ("and 3 more") stay quiet.
+[hidden]
+format=(and %h more)
+text-color=#707880
+
+# Urgent ones (a failed job, a low battery) stay until dismissed and are red, so they are never missed.
+[urgency=high]
+border-color=#cc6666
+default-timeout=0
+
+# The volume notification is a short-lived on-screen display, so it sits in the middle and has no border.
+[app-name=volume]
+anchor=center
+border-size=0
+default-timeout=1500

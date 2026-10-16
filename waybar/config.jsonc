@@ -1,0 +1,41 @@
+// waybar. `man 5 waybar` and one man page per module (`man 5 waybar-clock`, …) list every key.
+// ~/.config/waybar is a symlink to this directory in the chezmoi source.
+// sway starts waybar (`swaybar_command waybar` in the sway config), so `Super+Shift+C` restarts it and picks up an edit here or in style.css.
+{
+  "layer": "top",
+  "position": "top",
+  "height": 26,
+  "spacing": 12,
+
+  // Left: workspaces, then the current mode ("resize", "media", …) while one is active, so you always know which keyboard you are on.
+  "modules-left": ["sway/workspaces", "sway/mode"],
+  "modules-center": ["clock"],
+  // Right: volume, then the tray, where apps such as Steam and Signal put their icons.
+  // The tray is the reason this is waybar and not swaybar or yambar: neither of those has one.
+  "modules-right": ["wireplumber", "tray"],
+
+  "sway/workspaces": {
+    "disable-scroll": true
+  },
+  "sway/mode": {
+    "format": "{}"
+  },
+  "clock": {
+    // strftime plus fmt: weekday, day, month, 24-hour time.
+    "format": "{:%a %d %b  %H:%M}",
+    // Hovering shows a month calendar.
+    "tooltip-format": "<tt>{calendar}</tt>"
+  },
+  // PipeWire's own module, so it reports the same default output that ~/.local/bin/volume changes.
+  "wireplumber": {
+    "format": "vol {volume}%",
+    "format-muted": "muted",
+    // Click opens the mixer, the same as Super+M then o; scrolling changes the volume.
+    "on-click": "foot --app-id=mixer wiremix",
+    "on-scroll-up": "~/.local/bin/volume up",
+    "on-scroll-down": "~/.local/bin/volume down"
+  },
+  "tray": {
+    "spacing": 8
+  }
+}
