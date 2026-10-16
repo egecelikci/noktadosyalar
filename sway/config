@@ -37,7 +37,7 @@ input "type:keyboard" {
 ### Look
 output * bg #1d1f21 solid_color
 # Sway's own pointer, over the desktop and window borders.
-# XCURSOR_THEME (modules/gaming.nix in the nixos repo) only reaches a sway started after it was set; this line also applies on a reload.
+# XCURSOR_THEME (modules/desktop.nix in the nixos repo) only reaches a sway started after it was set; this line also applies on a reload.
 seat * xcursor_theme Bibata-Modern-Classic 24
 # A 2px border instead of a title bar on every window, and no border at all when a window is alone on its workspace (from emersion's config).
 default_border pixel 2
