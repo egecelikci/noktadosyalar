@@ -15,11 +15,32 @@ function close_open --description 'Close fuzzel if it is open; succeeds only whe
     pkill -x fuzzel
 end
 
-function clipboard --description 'Show the clipboard history and put the chosen entry back on the clipboard'
+function clipboard --description 'Show the clipboard history, images as thumbnails, and put the chosen entry back on the clipboard'
+    # cliphist lists `<id>\t<preview>`, newest first; images preview as `[[ binary data 185 KiB png 1440x900 ]]`.
+    set -l entries (cliphist -preview-width 200 list)
+    test (count $entries) -gt 0; or return 0
+
+    # PNG images get their own picture as the row's icon, through Rofi's dmenu extension that fuzzel supports (`<text>\0icon\x1f<path>`).
+    # Each image is decoded once, into a per-session cache keyed by its cliphist id, so reopening the picker stays fast.
+    # Other image types stay text rows: fuzzel only draws PNG and SVG icons.
+    set -l thumbs $XDG_RUNTIME_DIR/cliphist-thumbs
+    mkdir -p $thumbs
+
+    # The ids are hidden from the rows; `--index` returns the position instead, which maps back to the cliphist line.
+    set -l choice (for entry in $entries
+            set -l parts (string split --max 1 \t -- $entry)
+            if string match -qr '^\[\[ binary data .* png ' -- $parts[2]
+                set -l thumb $thumbs/$parts[1].png
+                test -s $thumb; or printf '%s\n' $entry | cliphist decode >$thumb
+                command printf '%s\0icon\037%s\n' "image  "(string replace -r '^\[\[ binary data (.*) \]\]$' '$1' -- $parts[2]) $thumb
+            else
+                printf '%s\n' $parts[2]
+            end
+        end | fuzzel --dmenu --index --prompt 'clipboard> ' --width 70 --lines 14)
     # Escape makes fuzzel exit non-zero with no output; that is a normal "never mind", not an error.
-    set -l choice (cliphist list | fuzzel --dmenu --prompt 'clipboard> ')
     or return 0
-    printf '%s\n' $choice | cliphist decode | wl-copy
+
+    printf '%s\n' $entries[(math $choice + 1)] | cliphist decode | wl-copy
 end
 
 switch "$argv[1]"
