@@ -32,6 +32,10 @@ input "type:keyboard" {
 
 output * bg #1d1f21 solid_color
 
+# Sway's own pointer, over the desktop and window borders.
+# XCURSOR_THEME (modules/gaming.nix in the nixos repo) only reaches a sway started after it was set, and this line also applies on a reload.
+seat * xcursor_theme Bibata-Modern-Classic 24
+
 # Session services: notifications, and locking after 10 minutes idle (the screen goes off at 15, and the session locks before any suspend).
 exec fnott
 exec swayidle -w \
