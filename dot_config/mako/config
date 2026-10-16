@@ -29,3 +29,7 @@ default-timeout=0
 anchor=center
 border-size=0
 default-timeout=1500
+
+# A fullscreen window renders above mako's default `top` layer in sway (measured 2026-10-17: the notification was behind a fullscreen feishin), so a notification that lands while a game is running is invisible. Only game mode's is forced above it: everything else can wait behind the game, and the alerts that matter go to ntfy.
+[app-name=game-mode]
+layer=overlay
