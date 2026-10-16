@@ -1,0 +1,45 @@
+#!/bin/sh
+# @file menu
+# @brief Opens a fuzzel picker, or closes the one that is already open.
+# @description
+#     The one entry point for every fuzzel-based picker in the sway config, so they all behave the same way:
+#     the chord that opens a picker closes it again, and pressing a different picker's chord while one is open only closes the open one.
+#     Holding a chord does nothing extra, because the sway bindings that call this use `--no-repeat`; this script only decides between opening and closing.
+#
+#     Pickers:
+#
+#     - `launcher` — fuzzel's own application launcher (`Super+Space`).
+#     - `clipboard` — clipboard history from cliphist (`Super+C`); the chosen entry goes back on the clipboard.
+set -eu
+
+# @description Close fuzzel if it is open.
+# @noargs
+# @exitcode 0 A fuzzel was open and is now closed.
+# @exitcode 1 No fuzzel was open.
+close_open() {
+    pkill -x fuzzel
+}
+
+# @description Show the clipboard history and put the chosen entry back on the clipboard.
+# @noargs
+# @exitcode 0 An entry was chosen, or the picker was dismissed with Escape.
+clipboard() {
+    # Escape makes fuzzel exit non-zero with no output; that is a normal "never mind", not an error.
+    choice="$(cliphist list | fuzzel --dmenu --prompt 'clipboard> ')" || exit 0
+    printf '%s\n' "$choice" | cliphist decode | wl-copy
+}
+
+case "${1:-}" in
+launcher | clipboard) ;;
+*)
+    echo "usage: menu launcher|clipboard" >&2
+    exit 2
+    ;;
+esac
+
+close_open && exit 0
+
+case "$1" in
+launcher) exec fuzzel ;;
+clipboard) clipboard ;;
+esac

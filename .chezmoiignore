@@ -16,6 +16,8 @@ mastercomfig/
 .config/waybar
 .config/mako
 .local/bin/volume
+.local/bin/menu
+.local/bin/screenshot
 {{ end }}
 
 {{ if ne .chezmoi.os "android" }}

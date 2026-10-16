@@ -62,9 +62,10 @@ exec swayidle -w \
   before-sleep '$lock'
 
 ### Basics
-bindsym $mod+Return exec $term
-# Space, like Spotlight or Raycast on macOS, and the same chord closes it again: `pkill` succeeds only when fuzzel is already open, so the second press closes instead of opening a second copy.
-bindsym $mod+space exec pkill -x fuzzel || $menu
+bindsym --no-repeat $mod+Return exec $term
+# Space, like Spotlight or Raycast on macOS; pressing it again closes the launcher.
+# ~/.local/bin/menu is shared by every fuzzel picker (also Super+C), so they all open and close the same way.
+bindsym --no-repeat $mod+space exec ~/.local/bin/menu launcher
 bindsym $mod+Shift+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
@@ -74,7 +75,7 @@ bindsym $mod+Shift+r reload
 # Rarely needed, because these configs are symlinks into the chezmoi source and need no apply; it is for the files chezmoi still copies (templates, scripts in ~/.local/bin) and for pulling in changes made on another machine.
 # The terminal stays open until Enter, so a question from chezmoi (a file changed on both sides) can be answered and its output read.
 # fish rather than sh, because fish's config.fish is what exports BWS_ACCESS_TOKEN, which the Bitwarden-backed templates need.
-bindsym $mod+Shift+c exec $term --app-id=chezmoi fish -c 'chezmoi apply -v; and swaymsg reload; echo; echo "Enter to close"; read'
+bindsym --no-repeat $mod+Shift+c exec $term --app-id=chezmoi fish -c 'chezmoi apply -v; and swaymsg reload; echo; echo "Enter to close"; read'
 for_window [app_id="chezmoi"] floating enable, resize set 1000 600
 bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
 # L for lock.
@@ -142,8 +143,8 @@ bindsym $mod+a focus parent
 bindsym $mod+Shift+minus move scratchpad
 bindsym $mod+minus scratchpad show
 
-### Clipboard history: Super+C, pick an entry in fuzzel, and it is on the clipboard again.
-bindsym $mod+c exec cliphist list | fuzzel --dmenu --prompt 'clipboard> ' | cliphist decode | wl-copy
+### Clipboard history: Super+C, pick an entry in fuzzel, and it is on the clipboard again; Super+C again closes it, like the launcher.
+bindsym --no-repeat $mod+c exec ~/.local/bin/menu clipboard
 
 ### Resize: Super+R, then hjkl or arrows, then Return or Escape.
 mode "resize" {
@@ -167,24 +168,24 @@ bindsym $mod+r mode "resize"
 #   D  drag a region with the mouse
 # Escape cancels; until a letter or Escape comes, the bar shows "screenshot" and the other keys do nothing.
 # Every screenshot is both copied to the clipboard and saved to ~/Pictures/Screenshots, so there is no second choice to make; mako confirms each one.
-# grimshot (grim + slurp + swaymsg underneath) does the capturing; `savecopy` is its save-and-copy action.
+# ~/.local/bin/screenshot does the capturing (grimshot: grim + slurp + swaymsg underneath) and lets only one run at a time.
+# Every binding here is --no-repeat: a held key used to start a new selector on every repeat, stacking dimmed overlays until the screen went white.
 # The board has no Print key, which is why these are chords.
-set $shot mkdir -p ~/Pictures/Screenshots && grimshot --notify savecopy
-set $shotfile ~/Pictures/Screenshots/$(date +%F_%H-%M-%S).png
+set $shot ~/.local/bin/screenshot
 mode "screenshot" {
-  bindsym w exec $shot window $shotfile, mode "default"
-  bindsym a exec $shot output $shotfile, mode "default"
-  bindsym d exec $shot area $shotfile, mode "default"
-  bindsym $mod+Shift+w exec $shot window $shotfile, mode "default"
-  bindsym $mod+Shift+a exec $shot output $shotfile, mode "default"
-  bindsym $mod+Shift+d exec $shot area $shotfile, mode "default"
+  bindsym --no-repeat w exec $shot window, mode "default"
+  bindsym --no-repeat a exec $shot screen, mode "default"
+  bindsym --no-repeat d exec $shot area, mode "default"
+  bindsym --no-repeat $mod+Shift+w exec $shot window, mode "default"
+  bindsym --no-repeat $mod+Shift+a exec $shot screen, mode "default"
+  bindsym --no-repeat $mod+Shift+d exec $shot area, mode "default"
   bindsym Escape mode "default"
 }
-bindsym $mod+Shift+s mode "screenshot"
+bindsym --no-repeat $mod+Shift+s mode "screenshot"
 
 ### Media
 # Super+M opens the mixer (wiremix, in a floating terminal): per-app volume, output and input devices.
-bindsym $mod+m exec $term --app-id=mixer wiremix
+bindsym --no-repeat $mod+m exec $term --app-id=mixer wiremix
 for_window [app_id="mixer"] floating enable, resize set 900 600
 
 # Volume and playback come from the keyboard: the NuPhy Fn layer sends these media keys, sway acts on them, and they keep working on the lock screen.
