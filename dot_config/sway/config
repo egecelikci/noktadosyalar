@@ -31,14 +31,11 @@ set $lock swaylock -f -c 1d1f21
 set $volume ~/.local/bin/volume
 
 ### Keyboard
-# Turkish Q, plus two remaps done here rather than in the NuPhy firmware, so they are versioned and undone by deleting a word:
-# - `caps:backspace` turns Caps Lock into a second Backspace.
-# - `altwin:swap_lalt_lwin` swaps the bottom-left Alt and Win, so Super is the key directly left of the space bar, under the left thumb.
-#   The ⌘ and Alt keycaps are swapped to match (2026-10-16), so the legends tell the truth: ⌘ is Super, Alt is Alt.
-# If the same swap is ever done in the keyboard's firmware instead, delete `altwin:swap_lalt_lwin` here, or the two swaps cancel out.
+# Turkish Q, and nothing else: every key remap lives in the NuPhy Air60 HE's own firmware (NuPhyIO), so the board behaves the same on every computer and the system never second-guesses it.
+# In the firmware (2026-10-16): Caps Lock sends Backspace, and the key directly left of the space bar sends Cmd (Super), with Opt (Alt) beside it.
+# Do not add `caps:` or `altwin:` xkb options here; a second remap on top of the firmware's cancels it out, which is what happened before this was removed.
 input "type:keyboard" {
   xkb_layout tr
-  xkb_options caps:backspace,altwin:swap_lalt_lwin
 }
 
 ### Look
