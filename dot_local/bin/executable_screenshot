@@ -6,6 +6,7 @@
 # Called by the sway screenshot mode (`Super+Shift+S`, then W, A or D).
 # Only one screenshot runs at a time: a second call while one is in progress (a held key, a double press, a second region selection) exits at once instead of stacking another selector on the screen.
 # The guard is a non-blocking `flock` on a file in `$XDG_RUNTIME_DIR`, so it is atomic and disappears with the session.
+# `--close` keeps the lock out of grimshot's children: wl-copy stays running to serve the clipboard until something else is copied, and while it inherited the lock every later screenshot was refused.
 # The capturing itself is grimshot's `savecopy` (grim + slurp + swaymsg), which also posts the confirmation through mako.
 
 set -l dir ~/Pictures/Screenshots
@@ -23,4 +24,4 @@ switch "$argv[1]"
 end
 
 mkdir -p $dir
-exec flock --nonblock $lock grimshot --notify savecopy $target $dir/(date +%F_%H-%M-%S).png
+exec flock --nonblock --close $lock grimshot --notify savecopy $target $dir/(date +%F_%H-%M-%S).png
