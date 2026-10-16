@@ -1,6 +1,6 @@
 // waybar. `man 5 waybar` and one man page per module (`man 5 waybar-clock`, …) list every key.
 // ~/.config/waybar/config.jsonc is a symlink to dot_config/waybar/config.jsonc in the chezmoi source (symlink mode, see .chezmoi.toml.tmpl there), so editing either one edits the same file.
-// sway starts waybar (`swaybar_command waybar` in the sway config), so `Super+Shift+C` restarts it and picks up an edit here or in style.css.
+// sway starts waybar (`swaybar_command waybar` in the sway config), so `Super+Shift+R` restarts it and picks up an edit here or in style.css.
 {
   "layer": "top",
   "position": "top",
@@ -30,7 +30,7 @@
   "wireplumber": {
     "format": "vol {volume}%",
     "format-muted": "muted",
-    // Click opens the mixer, the same as Super+M then o; scrolling changes the volume.
+    // Click opens the mixer, the same as Super+M; scrolling changes the volume.
     "on-click": "foot --app-id=mixer wiremix",
     "on-scroll-up": "~/.local/bin/volume up",
     "on-scroll-down": "~/.local/bin/volume down"

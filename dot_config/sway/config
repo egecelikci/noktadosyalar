@@ -1,13 +1,15 @@
 # sway config.
-# ~/.config/sway/config is a symlink to dot_config/sway/config in the chezmoi source (symlink mode, see .chezmoi.toml.tmpl there), so an edit is live after `Super+Shift+C` and versioned by a commit in that repo: there is no `chezmoi apply` step in between.
+# ~/.config/sway/config is a symlink to dot_config/sway/config in the chezmoi source (symlink mode, see .chezmoi.toml.tmpl there), so an edit is live after `Super+Shift+R` (reload) and versioned by a commit in that repo: there is no `chezmoi apply` step in between.
 # Built on sway's own default config (/etc/sway/config), so `man 5 sway` and every tutorial describe these keys; what differs from it is commented where it differs.
 #
 # The mental model, one rule per modifier:
 # - `Super+key` does a thing: focus, open, switch, toggle.
-# - `Super+Shift+key` does the same thing to the focused window, or the dangerous version of it: move instead of focus, send instead of switch, close, reload, exit.
+# - `Super+Shift+key` does the same thing to the focused window, or the bigger version of it: move instead of focus, send instead of switch, close, reload, exit, apply.
+#   The one exception is screenshots, which take `Super+Shift` plus W, A or D, laid out like a game's WASD keys (see Screenshots below).
 # - `Super+Ctrl+key` is the session itself: lock.
 # - `h j k l` are left, down, up, right everywhere, as in vim; the arrow keys do the same.
-# - A mode (`Super+M` media, `Super+N` notifications, `Super+Shift+S` screenshot, `Super+R` resize) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
+# - A mode (`Super+R` resize, `Super+N` notifications) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
+# - Volume and play/pause are the keyboard's job, not sway's: they are on the NuPhy Fn layer, which sends the media keys handled under Media below.
 
 # The NixOS sway module's drop-in: dbus-update-activation-environment, plus the systemctl --user import-environment and sway-session.target start.
 # A custom config silently drops them unless it includes the directory, and then portals and systemd user services never see WAYLAND_DISPLAY.
@@ -48,7 +50,7 @@ client.focused          #5f5aad #5f5aad    #ffffff #8f8ad6   #5f5aad
 client.unfocused        #1d1f21 #1d1f21    #707880 #1d1f21   #1d1f21
 
 ### Session services
-# mako shows notifications; `exec_always makoctl reload` makes `Super+Shift+C` pick up an edit to ~/.config/mako/config too.
+# mako shows notifications; `exec_always makoctl reload` makes `Super+Shift+R` pick up an edit to ~/.config/mako/config too.
 exec mako
 exec_always makoctl reload
 # Every copy is recorded for `Super+C`; images as well as text, because wl-paste hands cliphist whatever type was copied.
@@ -61,11 +63,19 @@ exec swayidle -w \
 
 ### Basics
 bindsym $mod+Return exec $term
-bindsym $mod+d exec $menu
+# Space, like Spotlight or Raycast on macOS.
+bindsym $mod+space exec $menu
 bindsym $mod+Shift+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
-bindsym $mod+Shift+c reload
+# R for reload: re-reads this file, restarts waybar, reloads mako. Open windows are untouched.
+bindsym $mod+Shift+r reload
+# C for chezmoi: `chezmoi apply` in a floating terminal, then a reload.
+# Rarely needed, because these configs are symlinks into the chezmoi source and need no apply; it is for the files chezmoi still copies (templates, scripts in ~/.local/bin) and for pulling in changes made on another machine.
+# The terminal stays open until Enter, so a question from chezmoi (a file changed on both sides) can be answered and its output read.
+# fish rather than sh, because fish's config.fish is what exports BWS_ACCESS_TOKEN, which the Bitwarden-backed templates need.
+bindsym $mod+Shift+c exec $term --app-id=chezmoi fish -c 'chezmoi apply -v; and swaymsg reload; echo; echo "Enter to close"; read'
+for_window [app_id="chezmoi"] floating enable, resize set 1000 600
 bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
 # L for lock.
 bindsym $mod+Ctrl+$right exec $lock
@@ -123,7 +133,8 @@ bindsym $mod+w layout tabbed
 bindsym $mod+e layout toggle split
 bindsym $mod+f fullscreen
 bindsym $mod+Shift+space floating toggle
-bindsym $mod+space focus mode_toggle
+# T for toggle: move focus between the tiled windows and the floating ones (Super+Space used to do this in sway's default config; it now opens the launcher).
+bindsym $mod+t focus mode_toggle
 bindsym $mod+a focus parent
 
 ### Scratchpad: a hidden workspace for windows you summon and dismiss.
@@ -149,51 +160,26 @@ mode "resize" {
 }
 bindsym $mod+r mode "resize"
 
-### Screenshot: Super+Shift+S, then what to capture.
-# The board has no Print key, so this is a mode instead of a row of chords.
-# The letter picks the target, and Shift on it picks the destination: plain copies to the clipboard, Shift saves a file to ~/Pictures/Screenshots.
-#   a  area you drag with the mouse
-#   w  window you click on
-#   s  the whole screen
-#   f  the focused window, no clicking
-# grimshot (grim + slurp + swaymsg underneath) does the capturing; --notify confirms each one through mako.
-set $shot grimshot --notify
+### Screenshots: one chord, laid out like WASD.
+#   Super+Shift+W  a window: click the one you want
+#   Super+Shift+A  all of the screen
+#   Super+Shift+D  drag a region with the mouse
+# Every screenshot is both copied to the clipboard and saved to ~/Pictures/Screenshots, so there is no second choice to make; mako confirms each one.
+# grimshot (grim + slurp + swaymsg underneath) does the capturing; `savecopy` is its save-and-copy action.
+# The board has no Print key, which is why these are chords.
+set $shot mkdir -p ~/Pictures/Screenshots && grimshot --notify savecopy
 set $shotfile ~/Pictures/Screenshots/$(date +%F_%H-%M-%S).png
-mode "screenshot" {
-  bindsym a exec $shot copy area, mode "default"
-  bindsym w exec $shot copy window, mode "default"
-  bindsym s exec $shot copy output, mode "default"
-  bindsym f exec $shot copy active, mode "default"
-  bindsym Shift+a exec mkdir -p ~/Pictures/Screenshots && $shot save area $shotfile, mode "default"
-  bindsym Shift+w exec mkdir -p ~/Pictures/Screenshots && $shot save window $shotfile, mode "default"
-  bindsym Shift+s exec mkdir -p ~/Pictures/Screenshots && $shot save output $shotfile, mode "default"
-  bindsym Shift+f exec mkdir -p ~/Pictures/Screenshots && $shot save active $shotfile, mode "default"
-  bindsym Escape mode "default"
-}
-bindsym $mod+Shift+s mode "screenshot"
+bindsym $mod+Shift+w exec $shot window $shotfile
+bindsym $mod+Shift+a exec $shot output $shotfile
+bindsym $mod+Shift+d exec $shot area $shotfile
 
-### Media: Super+M, then hjkl like everywhere else (an idea taken from emersion's config).
-#   h / l   previous / next track
-#   j / k   volume down / up (k is "up")
-#   m       mute
-#   space   play / pause
-#   o       open the mixer (wiremix, in a floating terminal)
-# Volume changes show as a mako notification with a level bar, through ~/.local/bin/volume.
-# The mode stays open so you can press j or k repeatedly; Escape leaves it.
-mode "media" {
-  bindsym $left exec playerctl previous
-  bindsym $right exec playerctl next
-  bindsym $down exec $volume down
-  bindsym $up exec $volume up
-  bindsym m exec $volume mute
-  bindsym space exec playerctl play-pause
-  bindsym o exec $term --app-id=mixer wiremix, mode "default"
-  bindsym Escape mode "default"
-}
-bindsym $mod+m mode "media"
+### Media
+# Super+M opens the mixer (wiremix, in a floating terminal): per-app volume, output and input devices.
+bindsym $mod+m exec $term --app-id=mixer wiremix
 for_window [app_id="mixer"] floating enable, resize set 900 600
 
-# The keyboard's own media keys (the NuPhy Fn layer sends these), and they keep working on the lock screen.
+# Volume and playback come from the keyboard: the NuPhy Fn layer sends these media keys, sway acts on them, and they keep working on the lock screen.
+# Volume changes show as a mako notification with a level bar, through ~/.local/bin/volume.
 bindsym --locked XF86AudioRaiseVolume exec $volume up
 bindsym --locked XF86AudioLowerVolume exec $volume down
 bindsym --locked XF86AudioMute exec $volume mute
@@ -226,7 +212,7 @@ mode "passthrough" {
 bindsym $mod+Shift+p mode "passthrough"
 
 ### Bar: waybar, configured in ~/.config/waybar (dot_config/waybar in the chezmoi source).
-# Started from here rather than as a systemd service so that `Super+Shift+C` restarts it with the rest of the config.
+# Started from here rather than as a systemd service so that `Super+Shift+R` restarts it with the rest of the config.
 # Super+Shift+B hides and shows it.
 bar {
   swaybar_command waybar
