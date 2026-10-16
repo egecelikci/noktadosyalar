@@ -1,0 +1,10 @@
+{{- /* chezmoi's own config, rendered by `chezmoi init` on each machine. */ -}}
+{{- if eq .chezmoi.os "linux" }}
+# Symlink mode, on the Linux desktop only.
+# `chezmoi apply` makes each plain file in ~ (for example ~/.config/sway/config) a symlink to its file in this source directory, instead of a copy.
+# That is what lets the sway, waybar and mako configs be edited while they run: an edit to ~/.config/sway/config is an edit to dot_config/sway/config here, live after `Super+Shift+C`, and versioned by a commit in this repo, with no `chezmoi apply` in between.
+# chezmoi still writes copies for templates (`.tmpl`), private (`private_`) and executable (`executable_`) files, because a symlink cannot carry those.
+# A new file (say ~/.config/foot/foot.ini) becomes a link only after `chezmoi add` and then `chezmoi apply`.
+# https://www.chezmoi.io/user-guide/frequently-asked-questions/design/
+mode = "symlink"
+{{- end }}

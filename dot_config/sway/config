@@ -1,5 +1,5 @@
 # sway config.
-# ~/.config/sway is a symlink to this directory in the chezmoi source (dot_config/symlink_sway.tmpl), so an edit here is live after `Super+Shift+C`, and versioned the moment it is committed: there is no `chezmoi apply` step in between.
+# ~/.config/sway/config is a symlink to dot_config/sway/config in the chezmoi source (symlink mode, see .chezmoi.toml.tmpl there), so an edit is live after `Super+Shift+C` and versioned by a commit in that repo: there is no `chezmoi apply` step in between.
 # Built on sway's own default config (/etc/sway/config), so `man 5 sway` and every tutorial describe these keys; what differs from it is commented where it differs.
 #
 # The mental model, one rule per modifier:
@@ -225,7 +225,7 @@ mode "passthrough" {
 }
 bindsym $mod+Shift+p mode "passthrough"
 
-### Bar: waybar, configured in ~/.config/waybar (the waybar/ directory next to this one).
+### Bar: waybar, configured in ~/.config/waybar (dot_config/waybar in the chezmoi source).
 # Started from here rather than as a systemd service so that `Super+Shift+C` restarts it with the rest of the config.
 # Super+Shift+B hides and shows it.
 bar {

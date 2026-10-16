@@ -8,13 +8,7 @@
 # Team Fortress 2
 mastercomfig/
 
-# Desktop configs that are edited while they run.
-# The real files live in these source directories, and ~/.config/<name> is a symlink to them (dot_config/symlink_<name>.tmpl).
-# An edit is therefore live at once (sway: Super+Shift+C, waybar and mako: reloaded by that too), and versioned by a commit here: there is no `chezmoi apply` in between, and nothing for apply to overwrite.
-# Ignored as targets because chezmoi would otherwise also create ~/sway, ~/waybar and ~/mako.
-sway/
-waybar/
-mako/
+# Live edits of dot_config/{sway,waybar,mako} on the Linux machine work through symlink mode; see .chezmoi.toml.tmpl.
 
 {{ if ne .chezmoi.os "linux" }}
 # The sway desktop and what it calls exist on the Linux machine only.

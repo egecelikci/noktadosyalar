@@ -1,5 +1,5 @@
 # mako, the notification daemon. `man 5 mako` lists every key.
-# ~/.config/mako is a symlink to this directory in the chezmoi source; `Super+Shift+C` reloads it (`exec_always makoctl reload` in the sway config).
+# ~/.config/mako/config is a symlink to dot_config/mako/config in the chezmoi source (symlink mode, see .chezmoi.toml.tmpl there); `Super+Shift+C` reloads it (`exec_always makoctl reload` in the sway config).
 # Colours follow the sway config: #1d1f21 background, #5f5aad accent (the focused-window border).
 
 font=sans 11

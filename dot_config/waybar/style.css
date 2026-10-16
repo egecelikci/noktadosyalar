@@ -1,3 +1,4 @@
+/* ~/.config/waybar/style.css is a symlink to dot_config/waybar/style.css in the chezmoi source (symlink mode, see .chezmoi.toml.tmpl there). */
 /* waybar's look. GTK CSS, so only the properties GTK understands work (`man 5 waybar` → STYLING). */
 /* Colours follow the sway config: #1d1f21 background, #c5c8c6 text, #5f5aad accent (the focused-window border). */
 
