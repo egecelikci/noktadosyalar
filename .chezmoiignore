@@ -8,6 +8,9 @@
 # Team Fortress 2
 mastercomfig/
 
+# The sway config itself; ~/.config/sway/config links here (dot_config/sway/symlink_config.tmpl), so edits are live without `chezmoi apply`.
+sway/
+
 {{ if ne .chezmoi.os "android" }}
 # Termux-only wrapper (dot_local/bin/executable_bws.tmpl). Ignored elsewhere,
 # because an empty rendering would otherwise delete a real ~/.local/bin/bws.
