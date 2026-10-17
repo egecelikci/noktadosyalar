@@ -1,10 +1,5 @@
 .config/rclone/rclone.conf
 
-# Pi: per-machine session history and model cache. auth.json IS managed
-# (templated from Bitwarden Secrets Manager), so it is not ignored.
-.pi/agent/sessions
-.pi/agent/models-store.json
-
 # Team Fortress 2
 mastercomfig/
 
@@ -42,9 +37,5 @@ mastercomfig/
 # and several of these files hold secrets (tunnel credentials, service
 # passwords, the restic password).
 .config/restic
-
-# Pi is not used on the phone.
-.pi
-install-pi-packages.fish
 {{ end }}
 
