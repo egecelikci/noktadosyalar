@@ -1,0 +1,28 @@
+#!/usr/bin/env fish
+# # phone-mic
+#
+# Makes this machine's microphone the phone's own: scrcpy sends the phone's microphone over USB (ADB), and that audio is re-exposed as a normal PipeWire source named `phone-mic`, which Overwatch or anything else can then pick as its microphone.
+#
+# Why it takes this route: the phone's USB modes (tethering, MIDI, PTP, webcam) carry no audio input, and stock Android has no USB-microphone gadget, so the mic has to travel over a data link — ADB is the wired one, and the wired one is the low-latency one.
+#
+# Usage: plug the phone in with USB debugging on (`adb devices` must list it as authorized), run this, and choose `phone-mic` where a microphone is asked for. The sink and the source are left loaded afterwards, so the device is still there for the next run; Ctrl-C stops the audio.
+#
+# If scrcpy's audio comes out of the speakers instead, move its stream to `phone-mic` in wiremix (the sink is a virtual one, so PULSE_SINK is only a hint). `--audio-buffer=` on the command line is the knob if voice chat feels delayed.
+
+set -l sink phone-mic
+set -l prev_sink (pactl get-default-sink)
+
+# The sink scrcpy plays into, and the source an app records from. Only once: a second call would stack a duplicate pair.
+if not pactl list short sinks | string match -q "*$sink*"
+    pactl load-module module-null-sink "sink_name=$sink" "sink_properties=device.description=$sink" >/dev/null
+    pactl load-module module-remap-source "master=$sink.monitor" "source_name=$sink" "source_properties=device.description=$sink" >/dev/null
+end
+
+# The new sink is virtual, but WirePlumber has made one the default output before now, and the game's sound belongs on the speakers.
+pactl set-default-sink $prev_sink >/dev/null
+
+# "The default microphone" is what a game reads when it opens its voice chat, so it points at the phone while this runs.
+set -l source_id (pactl list short sources | awk -v s=$sink '$2 == s { print $1 }')
+test -n "$source_id"; and wpctl set-default $source_id >/dev/null
+
+env PULSE_SINK=$sink scrcpy --no-video --audio-source=mic-voice-communication $argv
