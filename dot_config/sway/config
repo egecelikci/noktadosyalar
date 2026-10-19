@@ -49,8 +49,8 @@ seat * xcursor_theme Bibata-Modern-Classic 24
 default_border pixel 2
 smart_borders on
 hide_edge_borders smart
-# A 2px outer gap at the top is the volume bar's strip: wob draws into it, so its line sits beside the focused window's own border instead of covering it.
-gaps top 2
+# The top gap is the volume bar's strip: wob draws a 2px line at its top, and the 2px of background below keep that line from merging with the focused window's own border.
+gaps top 4
 # Window borders from Motif: the focused window wears the accent, the others the quiet border tone, and a window asking for attention the red hue.
 # The indicator (where the next window will open) is the accent's pressed shade, so it reads as part of the focus without disappearing into it.
 # class                 border            background        text              indicator               child_border
