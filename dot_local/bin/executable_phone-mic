@@ -7,7 +7,7 @@
 #
 # Usage: plug the phone in with USB debugging on (`adb devices` must list it as authorized), run this, and choose `phone-mic` where a microphone is asked for. The sink and the source are left loaded afterwards, so the device is still there for the next run; Ctrl-C stops the audio.
 #
-# If scrcpy's audio comes out of the speakers instead, move its stream to `phone-mic` in wiremix (the sink is a virtual one, so PULSE_SINK is only a hint). `--audio-buffer=` on the command line is the knob if voice chat feels delayed.
+# `--audio-buffer=` on the command line is the knob if voice chat feels delayed.
 
 set -l sink phone-mic
 set -l prev_sink (pactl get-default-sink)
@@ -25,4 +25,5 @@ pactl set-default-sink $prev_sink >/dev/null
 set -l source_id (pactl list short sources | awk -v s=$sink '$2 == s { print $1 }')
 test -n "$source_id"; and wpctl set-default $source_id >/dev/null
 
-env PULSE_SINK=$sink scrcpy --no-video --audio-source=mic-voice-communication $argv
+# SDL's native PipeWire backend ignores PULSE_SINK, so target the virtual sink directly.
+env SDL_AUDIO_DRIVER=pipewire PIPEWIRE_PROPS="{ target.object = $sink }" scrcpy --no-video --audio-source=mic-voice-communication $argv
