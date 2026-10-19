@@ -7,7 +7,7 @@ include=~/.config/motif/mako/motif-dark.ini
 
 font=sans 11
 border-size=2
-border-radius=8
+border-radius=0
 padding=12
 width=360
 # Top right, under waybar.
