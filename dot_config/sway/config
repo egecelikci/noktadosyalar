@@ -84,7 +84,7 @@ focus_follows_mouse yes
 # Reload sway, waybar and mako after editing a config
 bindsym $mod+Shift+r reload
 # Leave sway (asks first)
-bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
+bindsym $mod+Ctrl+Shift+q exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
 # Lock the screen
 bindsym $mod+Ctrl+q exec $lock
 
