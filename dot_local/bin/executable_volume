@@ -7,7 +7,6 @@
 # The step is `$step` percent; the level is capped at 100%, because PipeWire otherwise lets it climb into distortion.
 # sway keeps wob alive on a FIFO opened read-write, so writing the level never blocks; wob's own timeout hides the bar again.
 # While the sink is muted the level is sent with wob's `muted` style, so a silenced output is visible instead of looking like a low volume.
-# A fullscreen app covers the bar and a 2px line on top of a game is noise, so nothing is drawn while one is focused.
 
 set -l sink @DEFAULT_AUDIO_SINK@
 set -l step 2
@@ -32,12 +31,7 @@ set -l state (wpctl get-volume $sink)
 set -l line (math --scale=0 "round("(string split ' ' $state)[2]" * 100)")
 string match -q '*MUTED*' $state; and set line "$line muted"
 
-# The focused node is a fullscreen one exactly when sway is showing a fullscreen view.
-set -l fullscreen 0
-swaymsg -t get_tree 2>/dev/null | jq -e '[.. | objects | select(.focused? == true) | (.fullscreen_mode? // 0)] | max > 0' >/dev/null
-and set fullscreen 1
-
-if test "$show_bar" = 1; and test "$fullscreen" = 0
+if test "$show_bar" = 1
     # Only write while wob holds the FIFO: without a reader, opening it for writing would block the volume keys.
     pgrep -x wob >/dev/null; and test -p $fifo; and echo $line >$fifo
 end
