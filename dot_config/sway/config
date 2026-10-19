@@ -71,7 +71,7 @@ bindsym --no-repeat $mod+Return exec $term
 # Open or close the app launcher
 bindsym --no-repeat $mod+space exec pkill -x fuzzel || fuzzel
 # Close the focused window
-bindsym $mod+q kill
+bindsym $mod+Shift+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
 focus_follows_mouse yes
