@@ -1,9 +1,12 @@
 .config/rclone/rclone.conf
 
+# Repository-only regression tests.
+tests/
+
 # Team Fortress 2
 mastercomfig/
 
-# Live edits of dot_config/{sway,waybar,mako} on the Linux machine work through symlink mode; see .chezmoi.toml.tmpl.
+# Live edits of dot_config/{sway,waybar,mako,fuzzel} on the Linux machine work through symlink mode; see .chezmoi.toml.tmpl.
 
 {{ if ne .chezmoi.os "linux" }}
 # The sway desktop and what it calls exist on the Linux machine only.
@@ -14,7 +17,6 @@ mastercomfig/
 .config/waybar
 .config/mako
 .local/bin/volume
-.local/bin/menu
 .local/bin/screenshot
 {{ end }}
 

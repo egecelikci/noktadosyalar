@@ -1,27 +1,66 @@
 #!/usr/bin/env fish
-# # screenshot
-#
-# Takes one screenshot, copies it to the clipboard and saves it to `~/Pictures/Screenshots`.
-#
-# Called by the sway screenshot mode (`Super+Shift+S`, then W, A or D).
-# Only one screenshot runs at a time: a second call while one is in progress (a held key, a double press, a second region selection) exits at once instead of stacking another selector on the screen.
-# The guard is a non-blocking `flock` on a file in `$XDG_RUNTIME_DIR`, so it is atomic and disappears with the session.
-# `--close` keeps the lock out of grimshot's children: wl-copy stays running to serve the clipboard until something else is copied, and while it inherited the lock every later screenshot was refused.
-# The capturing itself is grimshot's `savecopy` (grim + slurp + swaymsg), which also posts the confirmation through mako.
+# Capture a window, region or focused monitor as PNG, then save it and copy it.
 
-set -l dir ~/Pictures/Screenshots
-set -l lock (set -q XDG_RUNTIME_DIR; and echo $XDG_RUNTIME_DIR; or echo /tmp)/screenshot.lock
-
-# grimshot calls the whole screen `output`.
-switch "$argv[1]"
-    case window area
-        set target $argv[1]
-    case screen
-        set target output
-    case '*'
-        echo "usage: screenshot window|screen|area" >&2
-        exit 2
+if test (count $argv) -ne 1; or not contains -- "$argv[1]" window screen area
+    echo "usage: screenshot window|screen|area" >&2
+    exit 2
 end
 
-mkdir -p $dir
-exec flock --nonblock --close $lock grimshot --notify savecopy $target $dir/(date +%F_%H-%M-%S).png
+if not set -q XDG_RUNTIME_DIR; or not test -d "$XDG_RUNTIME_DIR"
+    echo "screenshot: XDG_RUNTIME_DIR must name an existing session directory" >&2
+    exit 1
+end
+
+function fail --description 'Report a screenshot failure without discarding an already saved image' --argument-names message
+    echo "screenshot: $message" >&2
+    notify-send --app-name=screenshot --urgency=critical 'Screenshot failed' "$message" >/dev/null 2>&1
+    exit 1
+end
+
+umask 077
+set -l lock "$XDG_RUNTIME_DIR/screenshot.lock"
+touch "$lock"; or exit 1
+
+# Hold the lock on stdin; wl-copy receives the image as stdin instead, so its background child cannot retain the lock.
+begin
+    flock --nonblock 0; or exit 1
+
+    set -l capture
+    switch $argv[1]
+        case screen
+            set -l output (swaymsg -t get_outputs | jq -er '.[] | select(.focused) | .name')
+            test $status -eq 0; and test (count $output) -eq 1; or fail 'Cannot find the focused monitor'
+            set capture -o "$output"
+        case window area
+            set -l accent (jq -er '.dark.primary | select(type == "string" and test("^#[0-9a-fA-F]{6}$"))' ~/.config/motif/spec/palette.json)
+            test $status -eq 0; and test (count $accent) -eq 1; or fail 'Cannot read the Motif selection color'
+            set -l picker -b '#00000040' -B '#00000040' -s '#00000000' -c "$accent" -w 2
+            set -l geometry
+            if test "$argv[1]" = window
+                set -l windows (swaymsg -t get_tree | jq -er '.. | objects | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"')
+                test $status -eq 0; and test (count $windows) -gt 0; or fail 'Cannot find any visible windows'
+                set geometry (printf '%s\n' $windows | slurp $picker -r); or exit 1
+            else
+                set geometry (slurp $picker -d </dev/null); or exit 1
+            end
+            test (count $geometry) -eq 1; and test -n "$geometry"; or exit 1
+            set capture -g "$geometry"
+    end
+
+    set -l dir ~/Pictures/Screenshots
+    mkdir -p "$dir"; or fail 'Cannot create the screenshot directory'
+    set -l id (uuidgen --time-v7); or fail 'Cannot generate a screenshot filename'
+    set -l file "$dir/$id.png"
+    # Reserve the filename without overwriting an existing image, even on a UUID collision.
+    printf '' >?"$file"; or fail 'Cannot reserve the screenshot filename'
+
+    grim -t png $capture "$file"
+    if test $status -ne 0; or not test -s "$file"
+        rm -f -- "$file"
+        fail 'Capture failed'
+    end
+
+    wl-copy --type image/png <"$file"; or fail "Saved to $file, but clipboard copying failed"
+    notify-send --app-name=screenshot --expire-time=3000 --icon="$file" 'Screenshot saved and copied' "$file"; or echo "screenshot: saved to $file, but notification failed" >&2
+    printf '%s\n' "$file"
+end <"$lock"
