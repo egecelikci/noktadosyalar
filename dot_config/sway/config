@@ -66,6 +66,8 @@ exec_always makoctl reload
 # wob is the volume bar: a two-pixel line under waybar. The FIFO is opened read-write so neither side blocks, and ~/.local/bin/volume writes a level into it.
 # exec_always rather than exec, so `Super+Shift+R` restarts the bar like it restarts waybar; the previous wob is killed first.
 exec_always sh -c 'pkill -x wob; test -p "$XDG_RUNTIME_DIR/wob.fifo" || mkfifo -m 600 "$XDG_RUNTIME_DIR/wob.fifo"; exec wob -c "$HOME/.config/motif/wob/motif-dark.ini" <> "$XDG_RUNTIME_DIR/wob.fifo"'
+# wob-watch hides a bar that is already up the moment a window goes fullscreen (volume draws none while one is); restarted on reload like wob itself.
+exec_always sh -c 'test -r "$XDG_RUNTIME_DIR/wob-watch.pid" && kill "$(cat "$XDG_RUNTIME_DIR/wob-watch.pid")" 2>/dev/null; "$HOME/.local/bin/wob-watch" >/dev/null 2>&1 & echo $! > "$XDG_RUNTIME_DIR/wob-watch.pid"'
 # Lock after 10 minutes idle, screen off at 15, and always lock before a suspend.
 exec swayidle -w \
   timeout 600 '$lock' \
