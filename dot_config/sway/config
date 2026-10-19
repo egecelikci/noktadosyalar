@@ -209,7 +209,7 @@ bindsym --no-repeat $mod+m exec $term --app-id=mixer wiremix
 for_window [app_id="mixer"] floating enable, resize set 900 600
 
 # Volume and playback come from the keyboard: the NuPhy Fn layer sends these media keys, sway acts on them, and they keep working on the lock screen.
-# Volume changes show as a mako notification with a level bar, through ~/.local/bin/volume.
+# Volume changes have no on-screen display: waybar's wireplumber module is the meter.
 # Volume up, down, mute (keyboard media keys)
 bindsym --locked XF86AudioRaiseVolume exec $volume up
 bindsym --locked XF86AudioLowerVolume exec $volume down
