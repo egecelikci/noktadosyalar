@@ -77,6 +77,15 @@ focus_follows_mouse yes
 # R for reload: re-reads this file, restarts waybar, reloads mako. Open windows are untouched.
 #: Reload sway, waybar and mako after editing a config
 bindsym $mod+Shift+r reload
+# C for chezmoi: `chezmoi apply` in a floating terminal, then a reload.
+# This is the only path for the files chezmoi copies instead of symlinking: templates and the scripts in ~/.local/bin.
+# The terminal stays open until Enter, so a question from chezmoi (a file changed on both sides) can be answered and its output read.
+# fish rather than sh, because fish's config.fish is what exports BWS_ACCESS_TOKEN, which the Bitwarden-backed templates need.
+#: Run chezmoi apply, then reload
+bindsym --no-repeat $mod+Shift+c exec $term --app-id=chezmoi fish -c 'chezmoi apply -v; and swaymsg reload; echo; echo "Enter to close"; read'
+for_window [app_id="chezmoi"] floating enable, resize set 1000 600
+#: Leave sway (asks first)
+bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
 #: Lock the screen
 bindsym $mod+Ctrl+q exec $lock
 
