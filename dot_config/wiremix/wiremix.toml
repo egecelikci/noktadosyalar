@@ -4,7 +4,7 @@
 # q would close the mixer on a stray keypress; Ctrl+Q is the deliberate way out, and Super+Shift+Q still kills the window.
 keybindings = [
   { key = { Char = "q" }, action = "Nothing" },
-  { key = { Char = "q" }, modifiers = "CTRL", action = "Exit" },
+  { key = { Char = "q" }, modifiers = "CONTROL", action = "Exit" },
 ]
 
 # The sliders stop where ~/.local/bin/volume stops, so nothing here can push a sink into clipping either.
