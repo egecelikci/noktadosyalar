@@ -4,10 +4,11 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 26,
+  // Sway's current tab strip is 25px high (get_tree → deco_rect.height).
+  "height": 25,
   "spacing": 12,
 
-  // Left: workspaces, then the current mode ("resize", "media", …) while one is active, so you always know which keyboard you are on.
+  // Left: workspaces, then the current mode ("screenshot", "notifications", …) while one is active, so you always know which keyboard you are on.
   "modules-left": ["sway/workspaces", "sway/mode"],
   "modules-center": ["clock"],
   // Right: volume, then the tray, where apps such as Steam and Signal put their icons.
