@@ -5,25 +5,51 @@
 #
 # Why it takes this route: the phone's USB modes (tethering, MIDI, PTP, webcam) carry no audio input, and stock Android has no USB-microphone gadget, so the mic has to travel over a data link — ADB is the wired one, and the wired one is the low-latency one.
 #
-# Usage: plug the phone in with USB debugging on (`adb devices` must list it as authorized), run this, and choose `phone-mic` where a microphone is asked for. The sink and the source are left loaded afterwards, so the device is still there for the next run; Ctrl-C stops the audio.
+# Usage: plug the phone in with USB debugging on (`adb devices` must list it as authorized), run this, and choose `phone-mic` where a microphone is asked for. The sink and source exist only while this runs: scrcpy exiting, Ctrl-C and any other exit unload them and put the previous default microphone back.
 #
 # `--audio-buffer=` on the command line is the knob if voice chat feels delayed.
 
 set -l sink phone-mic
 set -l prev_sink (pactl get-default-sink)
+set -l prev_source (pactl get-default-source)
+set -g created
+set -g cleaned
 
-# The sink scrcpy plays into, and the source an app records from. Only once: a second call would stack a duplicate pair.
-if not pactl list short sinks | string match -q "*$sink*"
-    pactl load-module module-null-sink "sink_name=$sink" "sink_properties=device.description=$sink" >/dev/null
-    pactl load-module module-remap-source "master=$sink.monitor" "source_name=$sink" "source_properties=device.description=$sink" >/dev/null
+function cleanup --description 'Unload the virtual sink and source and restore the previous default microphone, once'
+    test "$cleaned" = 1; and return
+    set -g cleaned 1
+    for id in $created
+        pactl unload-module $id 2>/dev/null
+    end
+    pactl set-default-source "$prev_source" 2>/dev/null
 end
+
+function leave_int --on-signal INT --description 'Unload everything after Ctrl-C'
+    cleanup
+    exit 130
+end
+
+function leave_exit --on-event fish_exit --description 'Unload everything however the script ends'
+    cleanup
+end
+
+# A previous run killed outright can leave the pair behind; start from a clean slate.
+for id in (pactl list short modules | awk '/sink_name=phone-mic|source_name=phone-mic/ { print $1 }')
+    pactl unload-module $id
+end
+
+set -a created (pactl load-module module-null-sink "sink_name=$sink" "sink_properties=device.description=$sink")
+set -a created (pactl load-module module-remap-source "master=$sink.monitor" "source_name=$sink" "source_properties=device.description=$sink")
 
 # The new sink is virtual, but WirePlumber has made one the default output before now, and the game's sound belongs on the speakers.
 pactl set-default-sink $prev_sink >/dev/null
 
 # "The default microphone" is what a game reads when it opens its voice chat, so it points at the phone while this runs.
-set -l source_id (pactl list short sources | awk -v s=$sink '$2 == s { print $1 }')
-test -n "$source_id"; and wpctl set-default $source_id >/dev/null
+# Best effort: WirePlumber prefers the null sink's monitor here (same audio, so harmless); an app that filters monitors out of its device list still sees `phone-mic` and can be pointed at it.
+pactl set-default-source $sink 2>/dev/null
 
 # SDL's native PipeWire backend ignores PULSE_SINK, so target the virtual sink directly.
 env SDL_AUDIO_DRIVER=pipewire PIPEWIRE_PROPS="{ target.object = $sink }" scrcpy --no-video --audio-source=mic-voice-communication $argv
+set -l code $status
+cleanup
+exit $code

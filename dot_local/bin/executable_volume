@@ -10,6 +10,8 @@
 
 set -l sink @DEFAULT_AUDIO_SINK@
 set -l step 2
+# Set to 0 to change the volume silently: waybar's wireplumber module is then the only indicator, and nothing is written to wob.
+set -l show_bar 1
 set -l fifo (set -q XDG_RUNTIME_DIR; and echo $XDG_RUNTIME_DIR; or echo /tmp)/wob.fifo
 
 switch "$argv[1]"
@@ -28,4 +30,7 @@ end
 set -l state (wpctl get-volume $sink)
 set -l line (math --scale=0 "round("(string split ' ' $state)[2]" * 100)")
 string match -q '*MUTED*' $state; and set line "$line muted"
-test -p $fifo; and echo $line >$fifo
+if test "$show_bar" = 1
+    # Only write while wob holds the FIFO: without a reader, opening it for writing would block the volume keys.
+    pgrep -x wob >/dev/null; and test -p $fifo; and echo $line >$fifo
+end
