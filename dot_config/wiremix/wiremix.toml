@@ -1,0 +1,12 @@
+# wiremix, the mixer Super+M opens. `~/.config/wiremix/wiremix.toml` is a symlink into the chezmoi source.
+# The reference for every key is the wiremix.toml in wiremix's own repository: it has no man page.
+
+# q would close the mixer on a stray keypress; Ctrl+Q is the deliberate way out, and Super+Shift+Q still kills the window.
+keybindings = [
+  { key = { Char = "q" }, action = "Nothing" },
+  { key = { Char = "q" }, modifiers = "CTRL", action = "Exit" },
+]
+
+# The sliders stop where ~/.local/bin/volume stops, so nothing here can push a sink into clipping either.
+max_volume_percent = 100.0
+enforce_max_volume = true
