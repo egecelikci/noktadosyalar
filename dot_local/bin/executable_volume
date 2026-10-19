@@ -1,21 +1,28 @@
 #!/usr/bin/env fish
 # # volume
 #
-# Changes the default output's volume.
+# Changes the default output's volume and shows the new level on wob.
 #
 # Called by the keyboard's volume keys (the NuPhy Fn layer) through `~/.config/sway/config`, and by waybar's scroll on the volume module.
-# The level is capped at 100%, because PipeWire otherwise lets it climb into distortion.
+# The step is `$step` percent; the level is capped at 100%, because PipeWire otherwise lets it climb into distortion.
+# sway starts wob with a FIFO opened read-write, so writing the level never blocks; wob's own timeout hides the bar again.
 
 set -l sink @DEFAULT_AUDIO_SINK@
+set -l step 2
+set -l fifo (set -q XDG_RUNTIME_DIR; and echo $XDG_RUNTIME_DIR; or echo /tmp)/wob.fifo
 
 switch "$argv[1]"
     case up
-        wpctl set-volume -l 1.0 $sink 5%+
+        wpctl set-volume -l 1.0 $sink $step%+
     case down
-        wpctl set-volume $sink 5%-
+        wpctl set-volume $sink $step%-
     case mute
         wpctl set-mute $sink toggle
     case '*'
         echo "usage: volume up|down|mute" >&2
         exit 2
 end
+
+# `wpctl get-volume` prints `Volume: 0.45`, with ` [MUTED]` appended when muted.
+set -l percent (math --scale=0 "round("(string split ' ' (wpctl get-volume $sink))[2]" * 100)")
+test -p $fifo; and echo $percent >$fifo

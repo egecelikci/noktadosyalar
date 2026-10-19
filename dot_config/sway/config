@@ -58,6 +58,8 @@ client.urgent           $motif_red        $motif_red        $motif_bg         $m
 # mako shows notifications; `exec_always makoctl reload` makes `Super+Shift+R` pick up an edit to ~/.config/mako/config too.
 exec mako
 exec_always makoctl reload
+# wob is the volume bar: a thin overlay under waybar. The FIFO is opened read-write so neither side blocks, and ~/.local/bin/volume writes a level into it.
+exec sh -c 'test -p "$XDG_RUNTIME_DIR/wob.fifo" || mkfifo -m 600 "$XDG_RUNTIME_DIR/wob.fifo"; exec wob -c "$HOME/.config/motif/wob/motif-dark.ini" <> "$XDG_RUNTIME_DIR/wob.fifo"'
 # Lock after 10 minutes idle, screen off at 15, and always lock before a suspend.
 exec swayidle -w \
   timeout 600 '$lock' \
