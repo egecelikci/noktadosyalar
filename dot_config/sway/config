@@ -64,33 +64,33 @@ exec swayidle -w \
   before-sleep '$lock'
 
 ### Basics
-#: Open a terminal (foot)
+# Open a terminal (foot)
 bindsym --no-repeat $mod+Return exec $term
 # Space, like Spotlight or Raycast on macOS; pressing it again closes the launcher.
-#: Open or close the app launcher
+# Open or close the app launcher
 bindsym --no-repeat $mod+space exec pkill -x fuzzel || fuzzel
-#: Close the focused window
+# Close the focused window
 bindsym $mod+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
 focus_follows_mouse yes
 # R for reload: re-reads this file, restarts waybar, reloads mako. Open windows are untouched.
-#: Reload sway, waybar and mako after editing a config
+# Reload sway, waybar and mako after editing a config
 bindsym $mod+Shift+r reload
 # C for chezmoi: `chezmoi apply` in a floating terminal, then a reload.
 # This is the only path for the files chezmoi copies instead of symlinking: templates and the scripts in ~/.local/bin.
 # The terminal stays open until Enter, so a question from chezmoi (a file changed on both sides) can be answered and its output read.
 # fish rather than sh, because fish's config.fish is what exports BWS_ACCESS_TOKEN, which the Bitwarden-backed templates need.
-#: Run chezmoi apply, then reload
+# Run chezmoi apply, then reload
 bindsym --no-repeat $mod+Shift+c exec $term --app-id=chezmoi fish -c 'chezmoi apply -v; and swaymsg reload; echo; echo "Enter to close"; read'
 for_window [app_id="chezmoi"] floating enable, resize set 1000 600
-#: Leave sway (asks first)
+# Leave sway (asks first)
 bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
-#: Lock the screen
+# Lock the screen
 bindsym $mod+Ctrl+q exec $lock
 
 ### Focus and move
-#: Focus the window left, down, up or right
+# Focus the window left, down, up or right
 bindsym $mod+$left focus left
 bindsym $mod+$down focus down
 bindsym $mod+$up focus up
@@ -100,7 +100,7 @@ bindsym $mod+Down focus down
 bindsym $mod+Up focus up
 bindsym $mod+Right focus right
 
-#: Move the window left, down, up or right
+# Move the window left, down, up or right
 bindsym $mod+Shift+$left move left
 bindsym $mod+Shift+$down move down
 bindsym $mod+Shift+$up move up
@@ -111,7 +111,7 @@ bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
 ### Workspaces: Super+N goes there, Super+Shift+N sends the window there.
-#: Go to workspace 1–10
+# Go to workspace 1–10
 bindsym $mod+1 workspace number 1
 bindsym $mod+2 workspace number 2
 bindsym $mod+3 workspace number 3
@@ -122,7 +122,7 @@ bindsym $mod+7 workspace number 7
 bindsym $mod+8 workspace number 8
 bindsym $mod+9 workspace number 9
 bindsym $mod+0 workspace number 10
-#: Send the window to workspace 1–10
+# Send the window to workspace 1–10
 bindsym $mod+Shift+1 move container to workspace number 1
 bindsym $mod+Shift+2 move container to workspace number 2
 bindsym $mod+Shift+3 move container to workspace number 3
@@ -133,46 +133,46 @@ bindsym $mod+Shift+7 move container to workspace number 7
 bindsym $mod+Shift+8 move container to workspace number 8
 bindsym $mod+Shift+9 move container to workspace number 9
 bindsym $mod+Shift+0 move container to workspace number 10
-#: Next workspace
+# Next workspace
 bindsym $mod+Tab workspace next
-#: Previous workspace
+# Previous workspace
 # Shift+Tab arrives as ISO_Left_Tab, so the binding has to be made on the keycode to fire.
 bindsym --to-code $mod+Shift+Tab workspace prev
-#: Back to the workspace you came from
+# Back to the workspace you came from
 bindsym $mod+Ctrl+Tab workspace back_and_forth
 
 ### Layout
-#: Open the next window beside the focused one
+# Open the next window beside the focused one
 bindsym $mod+b splith
-#: Open the next window below the focused one
+# Open the next window below the focused one
 bindsym $mod+v splitv
-#: Stack the windows here (one title bar each)
+# Stack the windows here (one title bar each)
 bindsym $mod+s layout stacking
-#: Tab the windows here
+# Tab the windows here
 bindsym $mod+w layout tabbed
-#: Back to tiled, or flip between side by side and stacked
+# Back to tiled, or flip between side by side and stacked
 bindsym $mod+e layout toggle split
-#: Fullscreen on or off
+# Fullscreen on or off
 bindsym $mod+f fullscreen
-#: Float the window, or tile it again
+# Float the window, or tile it again
 bindsym $mod+Shift+space floating toggle
 # T for toggle: Super+Space did this in sway's default config; it now opens the launcher.
-#: Move focus between tiled and floating windows
+# Move focus between tiled and floating windows
 bindsym $mod+t focus mode_toggle
-#: Focus the parent container
+# Focus the parent container
 bindsym $mod+a focus parent
-#: Focus the last-focused child container
+# Focus the last-focused child container
 bindsym $mod+Shift+a focus child
 
 ### Scratchpad: a hidden workspace for windows you summon and dismiss.
 # On Turkish Q, `minus` is the key right of `*` on the number row (the `=` keycap on this board).
-#: Hide the window in the scratchpad
+# Hide the window in the scratchpad
 bindsym $mod+Shift+minus move scratchpad
-#: Show or hide the scratchpad window
+# Show or hide the scratchpad window
 bindsym $mod+minus scratchpad show
 
 ### Resize: Ctrl controls size directly, without entering a mode.
-#: Shrink width or grow height, shrink height or grow width
+# Shrink width or grow height, shrink height or grow width
 bindsym $mod+Ctrl+$left resize shrink width 10px
 bindsym $mod+Ctrl+$down resize grow height 10px
 bindsym $mod+Ctrl+$up resize shrink height 10px
@@ -206,23 +206,23 @@ mode "screenshot" {
   #: Cancel
   bindsym Escape mode "default"
 }
-#: Screenshot mode (then W, A or D)
+# Screenshot mode (then W, A or D)
 bindsym --no-repeat $mod+Shift+s mode "screenshot"
 
 ### Media
-#: Open the mixer (per-app volume, devices)
+# Open the mixer (per-app volume, devices)
 bindsym --no-repeat $mod+m exec $term --app-id=mixer wiremix
 for_window [app_id="mixer"] floating enable, resize set 900 600
 
 # Volume and playback come from the keyboard: the NuPhy Fn layer sends these media keys, sway acts on them, and they keep working on the lock screen.
 # Volume changes show as a mako notification with a level bar, through ~/.local/bin/volume.
-#: Volume up, down, mute (keyboard media keys)
+# Volume up, down, mute (keyboard media keys)
 bindsym --locked XF86AudioRaiseVolume exec $volume up
 bindsym --locked XF86AudioLowerVolume exec $volume down
 bindsym --locked XF86AudioMute exec $volume mute
-#: Microphone mute (keyboard media key)
+# Microphone mute (keyboard media key)
 bindsym --locked XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
-#: Play/pause, next, previous (keyboard media keys)
+# Play/pause, next, previous (keyboard media keys)
 bindsym --locked XF86AudioPlay exec playerctl play-pause
 bindsym --locked XF86AudioPause exec playerctl play-pause
 bindsym --locked XF86AudioNext exec playerctl next
@@ -241,7 +241,7 @@ mode "notifications" {
   #: Cancel
   bindsym Escape mode "default"
 }
-#: Notifications mode (then D, Shift+D, Enter or U)
+# Notifications mode (then D, Shift+D, Enter or U)
 bindsym $mod+n mode "notifications"
 
 ### Passthrough: every key goes to the focused window, Super included, until the same chord again.
@@ -250,7 +250,7 @@ mode "passthrough" {
   #: Leave passthrough
   bindsym $mod+Shift+p mode "default"
 }
-#: Passthrough: every key goes to the app (games)
+# Passthrough: every key goes to the app (games)
 bindsym $mod+Shift+p mode "passthrough"
 
 ### Bar: waybar, configured in ~/.config/waybar (dot_config/waybar in the chezmoi source).
@@ -258,5 +258,5 @@ bindsym $mod+Shift+p mode "passthrough"
 bar {
   swaybar_command waybar
 }
-#: Hide or show the bar
+# Hide or show the bar
 bindsym $mod+Shift+b exec pkill -SIGUSR1 waybar
