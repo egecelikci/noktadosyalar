@@ -34,8 +34,11 @@ set $volume ~/.local/bin/volume
 # In the firmware (2026-10-16): Caps Lock sends Backspace, and the key directly left of the space bar sends Cmd (Super), with Opt (Alt) beside it.
 # Do not add `caps:` or `altwin:` xkb options here; a second remap on top of the firmware's cancels it out, which is what happened before this was removed.
 input "type:keyboard" {
-  xkb_layout tr
+  xkb_layout tr,us
 }
+# Turkish Q and US side by side: the layout is a runtime property here, so both are one chord away and the physical keys never move.
+#: Switch the keyboard layout (tr -> us -> back)
+bindsym $mod+Ctrl+space exec swaymsg input type:keyboard xkb_switch_layout next
 
 ### Look
 output * bg $motif_bg solid_color
@@ -155,6 +158,9 @@ bindsym $mod+Shift+space floating toggle
 # T for toggle: Super+Space did this in sway's default config; it now opens the launcher.
 # Move focus between tiled and floating windows
 bindsym $mod+t focus mode_toggle
+# Title bar on the focused window: cycles the 2px border, a title bar and none. New windows keep the 2px border from `default_border` above.
+#: Add or remove a title bar on the focused window
+bindsym $mod+Shift+t border toggle
 # Focus the parent container
 bindsym $mod+a focus parent
 # Focus the last-focused child container
@@ -177,6 +183,11 @@ bindsym $mod+Ctrl+Left resize shrink width 10px
 bindsym $mod+Ctrl+Down resize grow height 10px
 bindsym $mod+Ctrl+Up resize shrink height 10px
 bindsym $mod+Ctrl+Right resize grow width 10px
+# Width presets: a third, half, two thirds of the workspace, for the split you actually want instead of nudging it.
+#: Resize the window to 1/3, 1/2 or 2/3 of the workspace
+bindsym $mod+Ctrl+1 resize set width 33 ppt
+bindsym $mod+Ctrl+2 resize set width 50 ppt
+bindsym $mod+Ctrl+3 resize set width 66 ppt
 
 ### Screenshots: Super+Shift+S, then a letter laid out like WASD.
 # Keep Super+Shift held and add the letter, or let go and press it alone; both work.
