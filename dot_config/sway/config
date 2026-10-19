@@ -2,19 +2,14 @@
 # ~/.config/sway/config is a symlink to dot_config/sway/config in the chezmoi source (symlink mode, see .chezmoi.toml.tmpl there), so an edit is live after `Super+Shift+R` (reload) and versioned by a commit in that repo: there is no `chezmoi apply` step in between.
 # Built on sway's own default config (/etc/sway/config), so `man 5 sway` and every tutorial describe these keys; what differs from it is commented where it differs.
 #
-# The mental model, one rule per modifier:
-# - `Super+key` does a thing: focus, open, switch, toggle.
-# - `Super+Shift+key` does the same thing to the focused window, or the bigger version of it: move instead of focus, send instead of switch, close, reload, exit, apply.
+# The shortcut families:
+# - `Super+key` does a thing: focus, open, switch, toggle, close.
+# - `Super+Shift+key` moves instead of focusing, sends instead of switching, or reverses parent focus; it also handles reload.
 #   Screenshots are `Super+Shift+S` and then W, A or D, laid out like a game's WASD keys (see Screenshots below).
-# - `Super+Ctrl+key` is the session itself: lock.
+# - `Super+Ctrl+HJKL` controls window size; `Super+Ctrl+Q` locks without ending the session.
 # - `h j k l` are left, down, up, right everywhere, as in vim; the arrow keys do the same.
-# - A mode (`Super+R` resize, `Super+N` notifications, `Super+Shift+S` screenshot) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
+# - A mode (`Super+N` notifications, `Super+Shift+S` screenshot) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
 # - Volume and play/pause are the keyboard's job, not sway's: they are on the NuPhy Fn layer, which sends the media keys handled under Media below.
-#
-# Cheatsheet: a line starting with `#:` directly above a binding is that binding's one-line description.
-# `Super+Escape` lists every binding with its `#:` line in fuzzel (~/.local/bin/menu keys), and picking a row runs it.
-# Consecutive bindings with the same `#:` line show as one row, which is why the line is only written once above a group.
-# A binding without a `#:` line still appears, described by its section title.
 
 # The NixOS sway module's drop-in: dbus-update-activation-environment, plus the systemctl --user import-environment and sway-session.target start.
 # A custom config silently drops them unless it includes the directory, and then portals and systemd user services never see WAYLAND_DISPLAY.
@@ -30,7 +25,6 @@ set $down j
 set $up k
 set $right l
 set $term foot
-set $menu fuzzel
 set $lock swaylock -f -c $motif_bg_bare
 set $volume ~/.local/bin/volume
 
@@ -63,8 +57,6 @@ client.urgent           $motif_red        $motif_red        $motif_bg         $m
 # mako shows notifications; `exec_always makoctl reload` makes `Super+Shift+R` pick up an edit to ~/.config/mako/config too.
 exec mako
 exec_always makoctl reload
-# Every copy is recorded for `Super+C`; images as well as text, because wl-paste hands cliphist whatever type was copied.
-exec wl-paste --watch cliphist store
 # Lock after 10 minutes idle, screen off at 15, and always lock before a suspend.
 exec swayidle -w \
   timeout 600 '$lock' \
@@ -75,30 +67,18 @@ exec swayidle -w \
 #: Open a terminal (foot)
 bindsym --no-repeat $mod+Return exec $term
 # Space, like Spotlight or Raycast on macOS; pressing it again closes the launcher.
-# ~/.local/bin/menu is shared by every fuzzel picker (launcher, clipboard, this cheatsheet), so they all open and close the same way.
 #: Open or close the app launcher
-bindsym --no-repeat $mod+space exec ~/.local/bin/menu launcher
-#: Search all key bindings (this list)
-bindsym --no-repeat $mod+Escape exec ~/.local/bin/menu keys
+bindsym --no-repeat $mod+space exec pkill -x fuzzel || fuzzel
 #: Close the focused window
-bindsym $mod+Shift+q kill
+bindsym $mod+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
+focus_follows_mouse yes
 # R for reload: re-reads this file, restarts waybar, reloads mako. Open windows are untouched.
 #: Reload sway, waybar and mako after editing a config
 bindsym $mod+Shift+r reload
-# C for chezmoi: `chezmoi apply` in a floating terminal, then a reload.
-# Rarely needed, because these configs are symlinks into the chezmoi source and need no apply; it is for the files chezmoi still copies (templates, scripts in ~/.local/bin) and for pulling in changes made on another machine.
-# The terminal stays open until Enter, so a question from chezmoi (a file changed on both sides) can be answered and its output read.
-# fish rather than sh, because fish's config.fish is what exports BWS_ACCESS_TOKEN, which the Bitwarden-backed templates need.
-#: Run chezmoi apply, then reload
-bindsym --no-repeat $mod+Shift+c exec $term --app-id=chezmoi fish -c 'chezmoi apply -v; and swaymsg reload; echo; echo "Enter to close"; read'
-for_window [app_id="chezmoi"] floating enable, resize set 1000 600
-#: Leave sway (asks first)
-bindsym $mod+Shift+e exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
-# L for lock.
 #: Lock the screen
-bindsym $mod+Ctrl+$right exec $lock
+bindsym $mod+Ctrl+q exec $lock
 
 ### Focus and move
 #: Focus the window left, down, up or right
@@ -144,8 +124,12 @@ bindsym $mod+Shift+7 move container to workspace number 7
 bindsym $mod+Shift+8 move container to workspace number 8
 bindsym $mod+Shift+9 move container to workspace number 9
 bindsym $mod+Shift+0 move container to workspace number 10
+#: Next workspace
+bindsym $mod+Tab workspace next
+#: Previous workspace
+bindsym $mod+Shift+Tab workspace prev
 #: Back to the workspace you came from
-bindsym $mod+Tab workspace back_and_forth
+bindsym $mod+Ctrl+Tab workspace back_and_forth
 
 ### Layout
 #: Open the next window beside the focused one
@@ -167,6 +151,8 @@ bindsym $mod+Shift+space floating toggle
 bindsym $mod+t focus mode_toggle
 #: Focus the parent container
 bindsym $mod+a focus parent
+#: Focus the last-focused child container
+bindsym $mod+Shift+a focus child
 
 ### Scratchpad: a hidden workspace for windows you summon and dismiss.
 # On Turkish Q, `minus` is the key right of `*` on the number row (the `=` keycap on this board).
@@ -175,34 +161,22 @@ bindsym $mod+Shift+minus move scratchpad
 #: Show or hide the scratchpad window
 bindsym $mod+minus scratchpad show
 
-### Clipboard history
-# Super+C again closes it, like the launcher; images show as thumbnails.
-#: Clipboard history: pick an entry to copy it again
-bindsym --no-repeat $mod+c exec ~/.local/bin/menu clipboard
-
-### Resize: Super+R, then hjkl or arrows, then Return or Escape.
-mode "resize" {
-  #: Shrink or grow the window
-  bindsym $left resize shrink width 10px
-  bindsym $down resize grow height 10px
-  bindsym $up resize shrink height 10px
-  bindsym $right resize grow width 10px
-  bindsym Left resize shrink width 10px
-  bindsym Down resize grow height 10px
-  bindsym Up resize shrink height 10px
-  bindsym Right resize grow width 10px
-  #: Done resizing
-  bindsym Return mode "default"
-  bindsym Escape mode "default"
-}
-#: Resize mode
-bindsym $mod+r mode "resize"
+### Resize: Ctrl controls size directly, without entering a mode.
+#: Shrink width or grow height, shrink height or grow width
+bindsym $mod+Ctrl+$left resize shrink width 10px
+bindsym $mod+Ctrl+$down resize grow height 10px
+bindsym $mod+Ctrl+$up resize shrink height 10px
+bindsym $mod+Ctrl+$right resize grow width 10px
+bindsym $mod+Ctrl+Left resize shrink width 10px
+bindsym $mod+Ctrl+Down resize grow height 10px
+bindsym $mod+Ctrl+Up resize shrink height 10px
+bindsym $mod+Ctrl+Right resize grow width 10px
 
 ### Screenshots: Super+Shift+S, then a letter laid out like WASD.
 # Keep Super+Shift held and add the letter, or let go and press it alone; both work.
 # Escape cancels; until a letter or Escape comes, the bar shows "screenshot" and the other keys do nothing.
 # Every screenshot is both copied to the clipboard and saved to ~/Pictures/Screenshots, so there is no second choice to make; mako confirms each one.
-# ~/.local/bin/screenshot does the capturing (grimshot: grim + slurp + swaymsg underneath) and lets only one run at a time.
+# ~/.local/bin/screenshot uses grim and a Motif-colored slurp picker, and lets only one capture run at a time.
 # Every binding here is --no-repeat: a held key used to start a new selector on every repeat, stacking dimmed overlays until the screen went white.
 # The board has no Print key, which is why these are chords.
 set $shot ~/.local/bin/screenshot
