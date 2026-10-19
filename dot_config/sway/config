@@ -136,7 +136,8 @@ bindsym $mod+Shift+0 move container to workspace number 10
 #: Next workspace
 bindsym $mod+Tab workspace next
 #: Previous workspace
-bindsym $mod+Shift+Tab workspace prev
+# Shift+Tab arrives as ISO_Left_Tab, so the binding has to be made on the keycode to fire.
+bindsym --to-code $mod+Shift+Tab workspace prev
 #: Back to the workspace you came from
 bindsym $mod+Ctrl+Tab workspace back_and_forth
 
