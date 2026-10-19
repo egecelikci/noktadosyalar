@@ -45,10 +45,10 @@ output * bg $motif_bg solid_color
 # Sway's own pointer, over the desktop and window borders.
 # XCURSOR_THEME (modules/desktop.nix in the nixos repo) only reaches a sway started after it was set; this line also applies on a reload.
 seat * xcursor_theme Bibata-Modern-Classic 24
-# A 2px border instead of a title bar on every window, and no border at all when a window is alone on its workspace (from emersion's config).
+# A 2px border instead of a title bar on every window, drawn even when one window is alone on the workspace: with smart borders it would only appear when a second window opens, which shifts the first window's content by 2px.
+# Edge borders are not hidden either: hiding one grows the window into it (measured: content 0,0 instead of 2,2), which is the same jump in reverse.
 default_border pixel 2
-smart_borders on
-hide_edge_borders smart
+smart_borders off
 # The top gap is the volume bar's strip: wob draws its 2px line in the middle of it, with 1px of background between the line and the bar above and the focused window's border below.
 gaps top 4
 # Window borders from Motif: the focused window wears the accent, the others the quiet border tone, and a window asking for attention the red hue.
