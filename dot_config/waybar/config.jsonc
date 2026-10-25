@@ -11,10 +11,15 @@
   // Left: workspaces, then the current mode ("screenshot", "notifications", …) while one is active, so you always know which keyboard you are on.
   "modules-left": ["sway/workspaces", "sway/mode"],
   "modules-center": ["clock"],
-  // Right: volume, then the tray, where apps such as Steam and Signal put their icons.
+  // Right: keyboard layout, volume, then the tray, where apps such as Steam and Signal put their icons.
   // The tray is the reason this is waybar and not swaybar or yambar: neither of those has one.
-  "modules-right": ["wireplumber", "tray"],
+  "modules-right": ["sway/language", "wireplumber", "tray"],
 
+  // The live xkb layout from sway (us, tr, de in ~/.config/sway/config), so a switch is visible without a notification popping up and disappearing again.
+  "sway/language": {
+    "format": "{short}",
+    "tooltip-format": "{long}"
+  },
   "sway/workspaces": {
     "disable-scroll": true
   },
