@@ -3,6 +3,9 @@
 # Repository-only regression tests.
 tests/
 
+# Noctalia regenerates this file whenever the desktop palette changes.
+.config/sway/noctalia
+
 # Team Fortress 2
 mastercomfig/
 
@@ -17,7 +20,6 @@ mastercomfig/
 .config/waybar
 .config/mako
 .local/bin/volume
-.local/bin/screenshot
 {{ end }}
 
 {{ if ne .chezmoi.os "android" }}
