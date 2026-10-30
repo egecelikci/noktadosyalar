@@ -62,6 +62,21 @@ noctalia theme --theme-json $tmp/palette.json --config $tmp/template-hook.toml >
     exit 1
 end
 test -f $tmp/hook-called; or exit 1
+
+set -l foot_template $package/share/noctalia/assets/templates/foot/foot
+set -l terminal_keys (string match --all --regex --groups-only '\{\{colors\.([a-z_]+)\.default\.hex_stripped\}\}' <$foot_template)
+jq --args 'reduce $ARGS.positional[] as $key (. ; .dark[$key] = "#123456" | .light[$key] = "#abcdef")' $terminal_keys <$tmp/palette.json >$tmp/foot-palette.json; or exit 1
+for mode in dark light
+    noctalia theme --theme-json $tmp/foot-palette.json --default-mode $mode --render "$foot_template:$tmp/foot.ini" >$tmp/foot-render.log 2>&1; or begin
+        string collect <$tmp/foot-render.log >&2
+        exit 1
+    end
+    foot --check-config --config $tmp/foot.ini >$tmp/foot-check.log 2>&1; or begin
+        string collect <$tmp/foot-check.log >&2
+        exit 1
+    end
+end
+
 # Validate the real config against generated colours without changing the live theme or touching the display.
 string replace -- 'include ~/.config/sway/noctalia' "include $tmp/sway-theme" <"$config" >$tmp/sway-config
 
@@ -70,4 +85,4 @@ if test $status -ne 0
     string collect <$tmp/sway.log >&2
     exit 1
 end
-printf 'PASS: Sway syntax, native screenshots, generated theme, lock fallback and single shell owner\n'
+printf 'PASS: Sway syntax, native screenshots, generated Sway/Foot themes, lock fallback and single shell owner\n'

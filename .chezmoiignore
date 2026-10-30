@@ -3,23 +3,16 @@
 # Repository-only regression tests.
 tests/
 
-# Noctalia regenerates this file whenever the desktop palette changes.
+# Noctalia owns Foot's config and the generated Sway colour fragment.
+.config/foot
 .config/sway/noctalia
 
 # Team Fortress 2
 mastercomfig/
 
-# Live edits of dot_config/{sway,waybar,mako,fuzzel} on the Linux machine work through symlink mode; see .chezmoi.toml.tmpl.
-
 {{ if ne .chezmoi.os "linux" }}
-# The sway desktop and what it calls exist on the Linux machine only.
-.config/motif
-.config/fuzzel
-.config/foot
+# The Sway session exists on the Linux machine only.
 .config/sway
-.config/waybar
-.config/mako
-.local/bin/volume
 {{ end }}
 
 {{ if ne .chezmoi.os "android" }}
