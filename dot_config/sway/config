@@ -224,13 +224,21 @@ bindsym --locked XF86AudioPrev exec playerctl previous
 ### Notifications
 bindsym --no-repeat $mod+n exec $ipc panel-toggle control-center notifications
 
-### Passthrough: every key goes to the focused window, Super included, until the same chord again.
-# For games and VMs that want Super for themselves; use the same chord to leave this mode.
+### Passthrough: keep media keys and screen locking available without other desktop shortcuts interrupting games.
 mode "passthrough" {
+  bindsym --locked XF86AudioRaiseVolume exec $ipc volume-up
+  bindsym --locked XF86AudioLowerVolume exec $ipc volume-down
+  bindsym --locked XF86AudioMute exec $ipc volume-mute
+  bindsym --locked XF86AudioMicMute exec $ipc mic-mute
+  bindsym --locked XF86AudioPlay exec playerctl play-pause
+  bindsym --locked XF86AudioPause exec playerctl play-pause
+  bindsym --locked XF86AudioNext exec playerctl next
+  bindsym --locked XF86AudioPrev exec playerctl previous
+  bindsym $mod+Ctrl+q exec $lock
   #: Leave passthrough
   bindsym $mod+Shift+p mode "default"
 }
-# Passthrough: every key goes to the app (games)
+# Toggle game passthrough.
 bindsym $mod+Shift+p mode "passthrough"
 
 # Hide or show Noctalia's bar

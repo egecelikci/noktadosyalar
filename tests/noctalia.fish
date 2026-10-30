@@ -14,7 +14,7 @@ for binding in \
     'set $ipc noctalia msg' \
     'set $lock $ipc session lock || swaylock -f -c 000000' \
     'bindsym --no-repeat $mod+space exec $ipc panel-toggle launcher' \
-    'bindsym --no-repeat $mod+Ctrl+v exec $ipc panel-toggle clipboard' \
+    'bindsym --no-repeat $mod+c exec $ipc panel-toggle clipboard' \
     'bindsym --no-repeat $mod+n exec $ipc panel-toggle control-center notifications' \
     'bindsym --no-repeat $mod+m exec $ipc panel-toggle control-center audio' \
     'bindsym --locked XF86AudioRaiseVolume exec $ipc volume-up' \
@@ -26,6 +26,24 @@ for binding in \
     '  bindsym --no-repeat d exec $ipc screenshot-region, mode "default"'
     if not grep -Fxq -- "$binding" "$config"
         printf 'FAIL: missing binding: %s\n' "$binding" >&2
+        exit 1
+    end
+end
+
+string match --regex --groups-only '(?s)mode "passthrough" \{(.*?)\n\}' (string collect <"$config") >$tmp/passthrough; or exit 1
+for binding in \
+    '  bindsym --locked XF86AudioRaiseVolume exec $ipc volume-up' \
+    '  bindsym --locked XF86AudioLowerVolume exec $ipc volume-down' \
+    '  bindsym --locked XF86AudioMute exec $ipc volume-mute' \
+    '  bindsym --locked XF86AudioMicMute exec $ipc mic-mute' \
+    '  bindsym --locked XF86AudioPlay exec playerctl play-pause' \
+    '  bindsym --locked XF86AudioPause exec playerctl play-pause' \
+    '  bindsym --locked XF86AudioNext exec playerctl next' \
+    '  bindsym --locked XF86AudioPrev exec playerctl previous' \
+    '  bindsym $mod+Ctrl+q exec $lock' \
+    '  bindsym $mod+Shift+p mode "default"'
+    if not grep -Fxq -- "$binding" $tmp/passthrough
+        printf 'FAIL: missing passthrough binding: %s\n' "$binding" >&2
         exit 1
     end
 end
