@@ -61,8 +61,9 @@ bindsym --no-repeat $mod+Return exec $term
 # Space, like Spotlight or Raycast on macOS; pressing it again closes the launcher.
 # Open or close the app launcher
 bindsym --no-repeat $mod+space exec $ipc panel-toggle launcher
-# Keep Super+V for vertical splits; clipboard history uses Ctrl too.
-bindsym --no-repeat $mod+Ctrl+v exec $ipc panel-toggle clipboard
+# Keep Super+V for vertical splits
+# Clipboard manager
+bindsym --no-repeat $mod+c exec $ipc panel-toggle clipboard
 bindsym --no-repeat $mod+comma exec $ipc settings-toggle
 # Close the focused window
 bindsym $mod+Shift+q kill
