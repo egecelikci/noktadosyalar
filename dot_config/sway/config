@@ -9,7 +9,7 @@
 #   Screenshots are `Super+Shift+S` and then W, A or D, laid out like a game's WASD keys (see Screenshots below).
 # - `Super+Ctrl+HJKL` controls window size; `Super+Ctrl+Q` locks without ending the session.
 # - `h j k l` are left, down, up, right everywhere, as in vim; the arrow keys do the same.
-# - A mode (`Super+N` notifications, `Super+Shift+S` screenshot) is a small keyboard of its own: plain letters act, `Escape` leaves, and waybar shows the mode's name while you are in it.
+# - Screenshot mode (`Super+Shift+S`) is a small keyboard of its own: plain letters act and `Escape` leaves.
 # - Volume and play/pause are the keyboard's job, not sway's: they are on the NuPhy Fn layer, which sends the media keys handled under Media below.
 
 # The NixOS sway module's drop-in: dbus-update-activation-environment, plus the systemctl --user import-environment and sway-session.target start.
@@ -26,8 +26,9 @@ set $down j
 set $up k
 set $right l
 set $term foot
-set $lock swaylock -f -c $motif_bg_bare
-set $volume ~/.local/bin/volume
+set $ipc noctalia msg
+# The standalone locker remains a manual fallback if the shell is unavailable.
+set $lock $ipc session lock || swaylock -f -c $motif_bg_bare
 
 ### Keyboard
 # US first, because the Air60 HE wears US keycaps and that is the layout the labels describe; Turkish Q and German sit beside it, one chord away, for ğ ş ı ç and ä ö ü ß.
@@ -37,13 +38,13 @@ set $volume ~/.local/bin/volume
 input "type:keyboard" {
   xkb_layout us,tr,de
 }
-# The layout is a runtime property, so switching moves no physical key and the board's firmware is untouched. Waybar's sway/language module shows which one is live.
-# The console does not follow this: tty1-6 (tuigreet included) read console.keyMap, which is `us` in the nixos repo.
+# The layout is a runtime property, so switching moves no physical key and the board's firmware is untouched.
+# Recovery consoles do not follow this: their console.keyMap stays `us` in the nixos repo.
 #: Switch the keyboard layout (us -> tr -> de -> back)
 bindsym $mod+Ctrl+space exec swaymsg input type:keyboard xkb_switch_layout next
 
 ### Look
-output * bg $motif_bg solid_color
+# Noctalia owns the wallpaper and reserves space for its bar.
 # Sway's own pointer, over the desktop and window borders.
 # XCURSOR_THEME (modules/desktop.nix in the nixos repo) only reaches a sway started after it was set; this line also applies on a reload.
 seat * xcursor_theme Bibata-Modern-Classic 24
@@ -51,8 +52,6 @@ seat * xcursor_theme Bibata-Modern-Classic 24
 # Edge borders are not hidden either: hiding one grows the window into it (measured: content 0,0 instead of 2,2), which is the same jump in reverse.
 default_border pixel 2
 smart_borders off
-# The top gap is the volume bar's strip: wob draws its 2px line in the middle of it, with 1px of background between the line and the bar above and the focused window's border below.
-gaps top 4
 # Window borders from Motif: the focused window wears the accent, the others the quiet border tone, and a window asking for attention the red hue.
 # The indicator (where the next window will open) is the accent's pressed shade, so it reads as part of the focus without disappearing into it.
 # class                 border            background        text              indicator               child_border
@@ -62,31 +61,24 @@ client.unfocused        $motif_border     $motif_bg         $motif_text_muted $m
 client.urgent           $motif_red        $motif_red        $motif_bg         $motif_red             $motif_red
 
 ### Session services
-# mako shows notifications; `exec_always makoctl reload` makes `Super+Shift+R` pick up an edit to ~/.config/mako/config too.
-exec mako
-exec_always makoctl reload
-# wob is the volume bar: a two-pixel line under waybar. The FIFO is opened read-write so neither side blocks, and ~/.local/bin/volume writes a level into it.
-# exec_always rather than exec, so `Super+Shift+R` restarts the bar like it restarts waybar; the previous wob is killed first.
-exec_always sh -c 'pkill -x wob; test -p "$XDG_RUNTIME_DIR/wob.fifo" || mkfifo -m 600 "$XDG_RUNTIME_DIR/wob.fifo"; exec wob -c "$HOME/.config/motif/wob/motif-dark.ini" <> "$XDG_RUNTIME_DIR/wob.fifo"'
-# Lock after 10 minutes idle, screen off at 15, and always lock before a suspend.
-exec swayidle -w \
-  timeout 600 '$lock' \
-  timeout 900 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
-  before-sleep '$lock'
+# The NixOS drop-in above starts the graphical session target; Home Manager starts Noctalia exactly once through its user service.
+# Noctalia owns notifications, OSD, wallpaper and idle locking, so no competing daemons are started here.
 
 ### Basics
 # Open a terminal (foot)
 bindsym --no-repeat $mod+Return exec $term
 # Space, like Spotlight or Raycast on macOS; pressing it again closes the launcher.
 # Open or close the app launcher
-bindsym --no-repeat $mod+space exec pkill -x fuzzel || fuzzel
+bindsym --no-repeat $mod+space exec $ipc panel-toggle launcher
+# Keep Super+V for vertical splits; clipboard history uses Ctrl too.
+bindsym --no-repeat $mod+Ctrl+v exec $ipc panel-toggle clipboard
+bindsym --no-repeat $mod+comma exec $ipc settings-toggle
 # Close the focused window
 bindsym $mod+Shift+q kill
 # Drag floating windows with Super + left mouse button, resize them with Super + right.
 floating_modifier $mod normal
 focus_follows_mouse yes
-# R for reload: re-reads this file, restarts waybar, reloads mako. Open windows are untouched.
-# Reload sway, waybar and mako after editing a config
+# Reload only Sway; Noctalia watches its own configuration without restarting launched apps.
 bindsym $mod+Shift+r reload
 # Leave sway (asks first)
 bindsym $mod+Ctrl+Shift+q exec swaynag -t warning -m 'Exit sway?' -B 'Yes, exit sway' 'swaymsg exit'
@@ -196,8 +188,8 @@ bindsym $mod+Ctrl+3 resize set width 66 ppt
 
 ### Screenshots: Super+Shift+S, then a letter laid out like WASD.
 # Keep Super+Shift held and add the letter, or let go and press it alone; both work.
-# Escape cancels; until a letter or Escape comes, the bar shows "screenshot" and the other keys do nothing.
-# Every screenshot is both copied to the clipboard and saved to ~/Pictures/Screenshots, so there is no second choice to make; mako confirms each one.
+# Escape cancels; until a letter or Escape comes, the other keys do nothing.
+# Every screenshot is both copied to the clipboard and saved to ~/Pictures/Screenshots, so there is no second choice to make.
 # ~/.local/bin/screenshot uses grim and a Motif-colored slurp picker, and lets only one capture run at a time.
 # Every binding here is --no-repeat: a held key used to start a new selector on every repeat, stacking dimmed overlays until the screen went white.
 # The board has no Print key, which is why these are chords.
@@ -222,42 +214,28 @@ mode "screenshot" {
 bindsym --no-repeat $mod+Shift+s mode "screenshot"
 
 ### Media
-# Open the mixer (per-app volume, devices)
-bindsym --no-repeat $mod+m exec $term --app-id=mixer wiremix
-for_window [app_id="mixer"] floating enable, resize set 900 600
+# Open the audio controls (per-app volume, devices)
+bindsym --no-repeat $mod+m exec $ipc panel-toggle control-center audio
 
 # Volume and playback come from the keyboard: the NuPhy Fn layer sends these media keys, sway acts on them, and they keep working on the lock screen.
-# Volume changes have no on-screen display: waybar's wireplumber module is the meter.
+# Noctalia supplies the OSD and caps volume at 100%.
 # Volume up, down, mute (keyboard media keys)
-bindsym --locked XF86AudioRaiseVolume exec $volume up
-bindsym --locked XF86AudioLowerVolume exec $volume down
-bindsym --locked XF86AudioMute exec $volume mute
+bindsym --locked XF86AudioRaiseVolume exec $ipc volume-up
+bindsym --locked XF86AudioLowerVolume exec $ipc volume-down
+bindsym --locked XF86AudioMute exec $ipc volume-mute
 # Microphone mute (keyboard media key)
-bindsym --locked XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+bindsym --locked XF86AudioMicMute exec $ipc mic-mute
 # Play/pause, next, previous (keyboard media keys)
 bindsym --locked XF86AudioPlay exec playerctl play-pause
 bindsym --locked XF86AudioPause exec playerctl play-pause
 bindsym --locked XF86AudioNext exec playerctl next
 bindsym --locked XF86AudioPrev exec playerctl previous
 
-### Notifications: Super+N, then a letter (from emersion's config).
-mode "notifications" {
-  #: Dismiss the newest notification
-  bindsym d exec makoctl dismiss, mode "default"
-  #: Dismiss all notifications
-  bindsym Shift+d exec makoctl dismiss --all, mode "default"
-  #: Act on the newest (open the chat, the link…) and dismiss it
-  bindsym Return exec makoctl invoke && makoctl dismiss, mode "default"
-  #: Bring back the last dismissed notification
-  bindsym u exec makoctl restore, mode "default"
-  #: Cancel
-  bindsym Escape mode "default"
-}
-# Notifications mode (then D, Shift+D, Enter or U)
-bindsym $mod+n mode "notifications"
+### Notifications
+bindsym --no-repeat $mod+n exec $ipc panel-toggle control-center notifications
 
 ### Passthrough: every key goes to the focused window, Super included, until the same chord again.
-# For games and VMs that want Super for themselves; the bar shows "passthrough" while it is on.
+# For games and VMs that want Super for themselves; use the same chord to leave this mode.
 mode "passthrough" {
   #: Leave passthrough
   bindsym $mod+Shift+p mode "default"
@@ -265,10 +243,5 @@ mode "passthrough" {
 # Passthrough: every key goes to the app (games)
 bindsym $mod+Shift+p mode "passthrough"
 
-### Bar: waybar, configured in ~/.config/waybar (dot_config/waybar in the chezmoi source).
-# Started from here rather than as a systemd service so that `Super+Shift+R` restarts it with the rest of the config.
-bar {
-  swaybar_command waybar
-}
-# Hide or show the bar
-bindsym $mod+Shift+b exec pkill -SIGUSR1 waybar
+# Hide or show Noctalia's bar
+bindsym $mod+Shift+b exec $ipc bar-toggle
