@@ -27,16 +27,17 @@ set $ipc noctalia msg
 set $lock $ipc session lock || swaylock -f -c 000000
 
 ### Keyboard
-# US first, because the Air60 HE wears US keycaps and that is the layout the labels describe; Turkish Q and German sit beside it, one chord away, for ğ ş ı ç and ä ö ü ß.
+# US first, because the Air60 HE wears US keycaps and that is the layout the labels describe; Turkish Q and Turkish F sit beside it, one chord away, for ğ ş ı ç ö ü.
 # Every key remap lives in the board's own firmware (NuPhyIO), so it behaves the same on every computer and the system never second-guesses it.
 # In the firmware (2026-10-16): Caps Lock sends Backspace, and the key directly left of the space bar sends Cmd (Super), with Opt (Alt) beside it.
 # Do not add `caps:` or `altwin:` xkb options here; a second remap on top of the firmware's cancels it out, which is what happened before this was removed.
 input "type:keyboard" {
-  xkb_layout us,tr,de
+  xkb_layout us,tr,tr
+  xkb_variant ,,f
 }
 # The layout is a runtime property, so switching moves no physical key and the board's firmware is untouched.
 # Recovery consoles do not follow this: their console.keyMap stays `us` in the nixos repo.
-#: Switch the keyboard layout (us -> tr -> de -> back)
+#: Switch the keyboard layout (us -> tr -> tr f -> back)
 bindsym $mod+Ctrl+space exec swaymsg input type:keyboard xkb_switch_layout next
 
 ### Look
