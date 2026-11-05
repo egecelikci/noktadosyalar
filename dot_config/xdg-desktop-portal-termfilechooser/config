@@ -1,0 +1,5 @@
+; Packages and Sway portal routing live in /etc/nixos/modules/{desktop,home}.nix.
+; Enter confirms files, Space toggles multiple selections, and Shift+Q cancels.
+; Save dialogs create an instruction file to move/rename and select; selecting an existing file allows it to be overwritten.
+[filechooser]
+cmd=yazi-wrapper.sh

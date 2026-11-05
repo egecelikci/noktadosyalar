@@ -11,8 +11,9 @@ tests/
 mastercomfig/
 
 {{ if ne .chezmoi.os "linux" }}
-# The Sway session exists on the Linux machine only.
+# The Sway session and its terminal file picker exist on the Linux machine only.
 .config/sway
+.config/xdg-desktop-portal-termfilechooser
 {{ end }}
 
 {{ if ne .chezmoi.os "android" }}
