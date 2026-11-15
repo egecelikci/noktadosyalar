@@ -10,10 +10,15 @@ tests/
 # Team Fortress 2
 mastercomfig/
 
+# Deadlock: linked into the game by dot_local/share/Steam/…/symlink_autoexec.cfg.tmpl, so edits here are live.
+deadlock/
+
 {{ if ne .chezmoi.os "linux" }}
 # The Sway session and its terminal file picker exist on the Linux machine only.
 .config/sway
 .config/xdg-desktop-portal-termfilechooser
+# Deadlock is installed on the Linux machine only.
+.local/share/Steam
 {{ end }}
 
 {{ if ne .chezmoi.os "android" }}
