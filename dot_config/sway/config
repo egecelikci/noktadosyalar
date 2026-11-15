@@ -26,6 +26,9 @@ set $ipc noctalia msg
 # The emergency locker must work even when the shell has not generated a theme.
 set $lock $ipc session lock || swaylock -f -c 000000
 
+# Steam starts with the session, hidden in the tray, so it processes Vulkan shaders while the machine idles instead of at game launch.
+exec steam -silent
+
 ### Keyboard
 # US first, because the Air60 HE wears US keycaps and that is the layout the labels describe; Turkish Q and Turkish F sit beside it, one chord away, for ğ ş ı ç ö ü.
 # Every key remap lives in the board's own firmware (NuPhyIO), so it behaves the same on every computer and the system never second-guesses it.
