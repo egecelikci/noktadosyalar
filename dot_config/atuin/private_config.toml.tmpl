@@ -27,3 +27,12 @@ ignored_commands = [
 
 [sync]
 records = true
+{{- if ne .chezmoi.os "android" }}
+
+[daemon]
+enabled = true
+autostart = true
+
+[threads]
+capture = true
+{{- end }}
