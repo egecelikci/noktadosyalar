@@ -228,6 +228,12 @@ bindsym --locked XF86AudioPrev exec playerctl previous
 ### Notifications
 bindsym --no-repeat $mod+n exec $ipc panel-toggle control-center notifications
 
+### Gaming
+# Fullscreen Steam games so Sway direct-scanouts them instead of compositing on the Vega 8 iGPU.
+# Allowing tearing on outputs lets fullscreen games that disable VSync skip the compositor's vblank wait; games with VSync on stay tear-free.
+output * allow_tearing yes
+for_window [class="^steam_app_"] fullscreen enable
+
 ### Passthrough: keep media keys and screen locking available without other desktop shortcuts interrupting games.
 mode "passthrough" {
   bindsym --locked XF86AudioRaiseVolume exec $ipc volume-up
