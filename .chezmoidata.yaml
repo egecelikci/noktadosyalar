@@ -45,7 +45,9 @@ bws:
 # what makes chezmoi reinstall them.
 tf2:
   mastercomfig: "9.100.1"
-  preset: low
+  presets:
+    darwin: low
+    linux: medium
   # null-canceling-movement is deliberately missing: the NuPhy Air60 HE resolves
   # SOCD (last input priority) in firmware, which the in-game script only duplicates.
   addons:

@@ -62,7 +62,7 @@ for addon in $addons
     fetch "$release/mastercomfig-addon-$addon.vpk" "$custom/mastercomfig-addon-$addon.vpk"
 end
 
-printf 'preset=%s\n' {{ .tf2.preset }} >"$app/setup_hook.cfg"
+printf 'preset=%s\n' {{ index .tf2.presets .chezmoi.os | default "low" }} >"$app/setup_hook.cfg"
 printf 'exec addons/%s.cfg\n' $addons >"$app/addons.cfg"
 {{ with index .tf2.video_modes .chezmoi.os -}}
 printf 'mat_setvideomode {{ . }}\n' >"$app/pre_init.cfg"
