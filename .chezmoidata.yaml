@@ -62,6 +62,19 @@ tf2:
     darwin: "1280 800 0"
     linux: "1440 900 0"
 
+# Deadlock (run_onchange_after_install-deadlock). Sqooky/OptimizationLock is pinned so that a chezmoi run is reproducible; changing the commit, preset, addon list, or video overrides is what makes chezmoi reapply them.
+deadlock:
+  commit: "c636bda3de1bfa5c06faa7a12f03d30aebd59401"
+  preset: "Sqooky's .gi/gameinfo.gi"
+  addons:
+    pak97_dir.vpk: "Performance Improving Mods/Blur Disabler/pak97_dir.vpk"
+  video:
+    cpu_level: "0"
+    mem_level: "0"
+    gpu_mem_level: "0"
+    gpu_level: "0"
+    r_texture_stream_mip_bias: "4"
+
 # SSH commit-signing keys, one per machine. Source of truth for both
 # ~/.ssh/id_sign_ed25519.pub (this machine's key) and
 # ~/.config/git/allowed_signers (every machine trusts all of them).

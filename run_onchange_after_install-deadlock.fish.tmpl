@@ -1,0 +1,114 @@
+{{ if eq .chezmoi.os "android" }}#!/data/data/com.termux/files/usr/bin/fish{{ else }}#!/usr/bin/env fish{{ end }}
+
+# Deadlock install: Sqooky/OptimizationLock `gameinfo.gi`, optional `pakXX_dir.vpk` addons, and `video.txt` overrides.
+#
+# Everything pinned under `deadlock:` in `.chezmoidata.yaml` is applied here:
+#
+# - `game/citadel/gameinfo.gi`, after saving Valve's stock copy once as `gameinfo.gi.vanilla`.
+# - `game/citadel/addons/pakXX_dir.vpk` for each addon, tracked in `.chezmoi-managed` so removed addons are cleaned up without touching manual mods.
+# - `setting.<key>` values in Steam userdata's `1422450/local/cfg/video.txt`, patched in place so hardware IDs (`VendorID`, `DeviceID`) stay untouched.
+#
+# `game/citadel/cfg/autoexec.cfg` stays symlinked to `deadlock/autoexec.cfg` in this repo so edits there are live.
+
+{{ if ne .chezmoi.os "linux" -}}
+exit 0
+{{ end -}}
+
+set STEAM_ROOTS "$HOME/.local/share/Steam" "$HOME/.steam/steam"
+set -l BASE_URL "https://raw.githubusercontent.com/Sqooky/OptimizationLock/{{ .deadlock.commit }}"
+
+function find_deadlock --description 'Print the Deadlock folder when installed, or fail when absent'
+    for root in $STEAM_ROOTS
+        if test -f "$root/steamapps/appmanifest_1422450.acf" -a -f "$root/steamapps/common/Deadlock/game/citadel/gameinfo.gi"
+            echo "$root/steamapps/common/Deadlock"
+            return 0
+        end
+    end
+    return 1
+end
+
+function fetch --description 'Download a URL atomically into a destination path, aborting on failure'
+    set -l url $argv[1]
+    set -l dest $argv[2]
+    set -l tmp "$dest.tmp.$fish_pid"
+    if not curl -fsSL --retry 3 -o "$tmp" "$url"
+        rm -f "$tmp"
+        echo "could not download $url" >&2
+        exit 1
+    end
+    mv -f "$tmp" "$dest"
+end
+
+function encode_repo_path --description 'Percent-encode spaces in a GitHub repository path'
+    string replace -a ' ' '%20' -- $argv[1]
+end
+
+function patch_video_txt --description 'Update pinned setting.<key> values in a Deadlock video.txt without touching other lines'
+    set -l file $argv[1]
+    set -l content (cat "$file")
+    for pair in{{ range $key, $val := .deadlock.video }} {{ $key }}={{ $val }}{{ end }}
+        set -l kv (string split -m 1 = -- $pair)
+        set -l setting_key "setting.$kv[1]"
+        set -l setting_val $kv[2]
+        if string match -rq -- "\"$setting_key\"[[:space:]]+\"[^\"]*\"" $content
+            set content (string replace -r -- "(\"$setting_key\"[[:space:]]+)\"[^\"]*\"" "\$1\"$setting_val\"" $content)
+        end
+    end
+    printf '%s\n' $content >"$file"
+end
+
+# Patch any existing userdata video.txt even before game files are installed.
+set -l patched_video 0
+for root in $STEAM_ROOTS
+    for video_txt in "$root"/userdata/*/1422450/local/cfg/video.txt
+        if test -f "$video_txt"
+            patch_video_txt "$video_txt"
+            set patched_video 1
+        end
+    end
+end
+if test $patched_video -eq 1
+    echo "Updated Deadlock video.txt overrides"
+end
+
+set -l deadlock (find_deadlock)
+if test -z "$deadlock"
+    echo "Deadlock is not installed here; skipping gameinfo.gi and addons"
+    exit 0
+end
+
+# A running game keeps gameinfo.gi and VPKs open, so swapping them mid-session leaves a mixed state.
+if pgrep -fi 'deadlock\.exe|project8\.exe' >/dev/null
+    echo "Deadlock is running; close it, then run chezmoi apply again" >&2
+    exit 1
+end
+
+set -l citadel "$deadlock/game/citadel"
+set -l addons_dir "$citadel/addons"
+set -l manifest "$addons_dir/.chezmoi-managed"
+
+if not test -f "$citadel/gameinfo.gi.vanilla"
+    cp "$citadel/gameinfo.gi" "$citadel/gameinfo.gi.vanilla"
+end
+
+echo "Installing OptimizationLock ({{ .deadlock.preset }})…"
+set -l preset_path (encode_repo_path "{{ .deadlock.preset }}")
+fetch "$BASE_URL/$preset_path" "$citadel/gameinfo.gi"
+
+mkdir -p "$addons_dir"
+if test -f "$manifest"
+    for old_vpk in (cat "$manifest")
+        rm -f "$addons_dir/$old_vpk"
+    end
+end
+
+set -l managed
+{{ range $vpk, $repo_path := .deadlock.addons -}}
+echo "Installing addon {{ $vpk }}…"
+set -l addon_path (encode_repo_path "{{ $repo_path }}")
+fetch "$BASE_URL/$addon_path" "$addons_dir/{{ $vpk }}"
+set -a managed "{{ $vpk }}"
+{{ end -}}
+
+printf '%s\n' $managed >"$manifest"
+echo "Deadlock is set up"
