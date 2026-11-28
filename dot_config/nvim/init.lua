@@ -171,6 +171,9 @@ do
   -- instead raise a dialog asking if you wish to save the current file(s)
   -- See `:help 'confirm'`
   vim.o.confirm = true
+
+  -- Load trusted project-local .nvim.lua files (prompts :trust once per repo)
+  vim.o.exrc = true
 end
 
 -- ============================================================
@@ -909,9 +912,8 @@ do
     },
 
     completion = {
-      -- By default, you may press `<c-space>` to show the documentation.
-      -- Optionally, set `auto_show = true` to show the documentation after a delay.
-      documentation = { auto_show = false, auto_show_delay_ms = 500 },
+      -- Show completion documentation automatically as you move through the menu.
+      documentation = { auto_show = true, auto_show_delay_ms = 200 },
     },
 
     sources = {
