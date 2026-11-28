@@ -21,6 +21,8 @@ if test -x /opt/homebrew/bin/brew
     eval (/opt/homebrew/bin/brew shellenv)
 end
 
+fish_add_path --path ~/.local/bin
+
 if test -x /usr/libexec/java_home
     set -gx JAVA_HOME (/usr/libexec/java_home -v 17)
 end

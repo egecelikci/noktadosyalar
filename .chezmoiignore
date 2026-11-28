@@ -42,3 +42,9 @@ deadlock/
 .config/restic
 {{ end }}
 
+{{ if ne .chezmoi.os "darwin" }}
+# macOS-only app benchmark utility (uses Darwin top, pbcopy, osascript, and .app bundles).
+.local/bin/app-bench
+.config/fish/completions/app-bench.fish
+{{ end }}
+

@@ -1,0 +1,717 @@
+#!/usr/bin/env fish
+# # app-bench
+#
+# Measures and compares macOS application performance (memory footprint, CPU usage, Energy Impact, idle wakeups, threads, and optional disk footprint) in copyable Markdown and Discord formats.
+#
+# Why it matches by `.app` bundle path instead of process name: Electron apps spawn many helper processes, and launchers like Sunbird run a patched clone whose helpers are named `Discord Helper (...)` underneath `Sunbird.app`, so matching `/<App>.app/` captures every child process without mixing in unrelated apps.
+#
+# Why it reads `top`'s `mem` column instead of `ps -o rss`: RSS double-counts shared frameworks across helpers and misses compressed RAM, whereas `top`'s `mem` reports `phys_footprint` (Activity Monitor's Memory column) alongside Energy Impact and Idle Wakeups without needing `sudo`.
+#
+# Usage:
+#   app-bench Vesktop Sunbird
+#   app-bench -p -k Vesktop Sunbird
+#   app-bench -d 5m --fresh --note "Same server, #general" Vesktop Sunbird
+#   app-bench -w --discord --csv bench.csv Vesktop Sunbird
+
+# Single source of truth for argparse, --help, and --completions (short|long|arg|completions|description).
+set -l option_specs \
+    'd|duration|TIME|30s 1m 5m 10m 15m|Benchmark for TIME (e.g. 30s, 5m, 1h, or seconds)' \
+    'w|watch|||Benchmark until Ctrl-C, then print the report' \
+    'i|interval|SECS|1 2 5 10 15|Seconds per sample window (default: 5 in benchmark, 1 in snapshot)' \
+    'f|fresh|||Quit and relaunch target apps cleanly before sampling' \
+    'W|warmup|SECS|10s 30s 60s|Wait SECS after --fresh instead of prompting for Enter' \
+    'p|processes|||Include per-process breakdown (snapshot mode)' \
+    'k|disk|||Include app bundle and Application Support disk footprint' \
+    'n|note|TEXT||Add a test-condition note to the report header' \
+    'F|format|FMT|markdown discord both|Output format: markdown (default), discord, or both' \
+    'D|discord|||Shorthand for --format discord' \
+    'c|csv|FILE|@file|Write raw per-sample measurements to a CSV file' \
+    'o|output|FILE|@file|Also save the formatted report to a file' \
+    'C|no-copy|||Do not copy the report to the clipboard' \
+    'h|help|||Show this help message'
+
+function usage --description 'Render usage text from the declarative option table'
+    printf '%s\n' \
+        'Usage: app-bench [OPTIONS] <App1> [App2 ...]' \
+        '' \
+        'Quick snapshot (default) or time-series benchmark for macOS .app bundles.' \
+        'Matches all processes under /<App>.app/ and copies the report to the clipboard.' \
+        '' \
+        'Options:'
+    for spec in $argv
+        set -l parts (string split '|' -- "$spec")
+        set -l lhs "-$parts[1], --$parts[2]"
+        test -n "$parts[3]"; and set lhs "$lhs <$parts[3]>"
+        printf '  %-24s %s\n' "$lhs" "$parts[5]"
+    end
+end
+
+function emit_completions --description 'Generate fish completion definitions from the declarative option table'
+    printf '%s\n' \
+        "function __app_bench_installed_apps --description 'List installed macOS .app names'" \
+        '    for dir in /Applications "$HOME/Applications"' \
+        '        test -d "$dir"; or continue' \
+        '        for entry in "$dir"/*.app' \
+        '            test -d "$entry"; or continue' \
+        '            string replace -ri '"'"'\.app$'"'"' '"'"''"'"' -- (path basename -- "$entry")' \
+        '        end' \
+        '    end | sort -fu' \
+        'end' \
+        'complete -c app-bench -f'
+    for spec in $argv
+        set -l parts (string split '|' -- "$spec")
+        set -l desc (string replace -a "'" "\\'" -- "$parts[5]")
+        if test "$parts[4]" = '@file'
+            printf "complete -c app-bench -s %s -l %s -r -F -d '%s'\n" "$parts[1]" "$parts[2]" "$desc"
+        else if test -n "$parts[4]"
+            printf "complete -c app-bench -s %s -l %s -x -a '%s' -d '%s'\n" "$parts[1]" "$parts[2]" "$parts[4]" "$desc"
+        else if test -n "$parts[3]"
+            printf "complete -c app-bench -s %s -l %s -x -d '%s'\n" "$parts[1]" "$parts[2]" "$desc"
+        else
+            printf "complete -c app-bench -s %s -l %s -d '%s'\n" "$parts[1]" "$parts[2]" "$desc"
+        end
+    end
+    printf '%s\n' "complete -c app-bench -a '(__app_bench_installed_apps)'"
+end
+
+function parse_duration --argument-names raw --description 'Convert a duration like 5m, 90s, 1h30m, or 60 into integer seconds'
+    set -l s (string lower -- (string trim -- "$raw"))
+    if string match -qr '^[0-9]+$' -- "$s"
+        echo $s
+        return 0
+    end
+    if not string match -qr '^([0-9]+h)?([0-9]+m)?([0-9]+s)?$' -- "$s"; or test -z "$s"
+        return 1
+    end
+    set -l total 0
+    set -l h (string match -rg '([0-9]+)h' -- "$s")
+    set -l m (string match -rg '([0-9]+)m' -- "$s")
+    set -l sec (string match -rg '([0-9]+)s' -- "$s")
+    test -n "$h"; and set total (math "$total + $h * 3600")
+    test -n "$m"; and set total (math "$total + $m * 60")
+    test -n "$sec"; and set total (math "$total + $sec")
+    echo $total
+end
+
+function format_duration --argument-names secs --description 'Format integer seconds as 1h 2m 3s, 5m 0s, or 45s'
+    set -l h (math -s0 "$secs / 3600")
+    set -l rem (math "$secs % 3600")
+    set -l m (math -s0 "$rem / 60")
+    set -l s (math "$rem % 60")
+    if test $h -gt 0
+        printf '%dh %dm %ds' $h $m $s
+    else if test $m -gt 0
+        printf '%dm %ds' $m $s
+    else
+        printf '%ds' $s
+    end
+end
+
+function normalize_app_name --argument-names raw --description 'Strip path prefixes and trailing .app from an app argument'
+    set -l trimmed (string replace -r '/+$' '' -- "$raw")
+    string replace -ri '\.app$' '' -- (path basename -- "$trimmed")
+end
+
+function find_app_bundle --argument-names app --description 'Locate an installed .app bundle in standard macOS application folders'
+    set -l target_lower (string lower -- "$app.app")
+    for dir in /Applications "$HOME/Applications"
+        test -d "$dir"; or continue
+        for entry in "$dir"/*.app
+            test -d "$entry"; or continue
+            if test (string lower -- (path basename -- "$entry")) = "$target_lower"
+                echo "$entry"
+                return 0
+            end
+        end
+    end
+    return 1
+end
+
+function measure_disk --argument-names app --description 'Measure combined app bundle and Application Support size'
+    set -l paths
+    set -l bundle (find_app_bundle "$app")
+    test -n "$bundle"; and set -a paths "$bundle"
+
+    set -l support_dir "$HOME/Library/Application Support"
+    if test -d "$support_dir"
+        set -l app_lower (string lower -- "$app")
+        for entry in "$support_dir"/*
+            test -e "$entry"; or continue
+            if test (string lower -- (path basename -- "$entry")) = "$app_lower"
+                set -a paths "$entry"
+                break
+            end
+        end
+    end
+
+    if test (count $paths) -eq 0
+        echo "-"
+        return 0
+    end
+
+    set -l total_kb (du -sk $paths 2>/dev/null | awk '{ sum += $1 } END { print sum + 0 }')
+    if test "$total_kb" -le 0
+        echo "-"
+        return 0
+    end
+    awk -v kb="$total_kb" 'BEGIN {
+        mb = kb / 1024
+        if (mb >= 1024) printf "%.2f GB\n", mb / 1024
+        else printf "%.0f MB\n", mb
+    }'
+end
+
+function list_app_pids --argument-names app --description 'List running PIDs whose executable path belongs to /<app>.app/'
+    ps -axo pid=,command= | awk -v needle="/"(string lower -- "$app")".app/" '
+        index(tolower($0), needle) { print $1 }
+    '
+end
+
+function wait_for_exit --argument-names app attempts --description 'Poll until all processes for an app exit or attempts are exhausted'
+    for _ in (seq $attempts)
+        test (count (list_app_pids "$app")) -eq 0; and return 0
+        sleep 0.5
+    end
+    return 1
+end
+
+function calibrate_apps --description 'Quit and relaunch target apps cleanly, then wait for warmup or user confirmation'
+    set -l warmup_secs $argv[1]
+    set -l apps $argv[2..]
+
+    printf 'Calibrating: quitting %s…\n' (string join ', ' $apps) >&2
+    for app in $apps
+        set -l pids (list_app_pids "$app")
+        test (count $pids) -eq 0; and continue
+
+        osascript -e 'on run argv' -e 'tell application (item 1 of argv) to quit' -e 'end run' -- "$app" >/dev/null 2>&1
+        if not wait_for_exit "$app" 10
+            # Fall back to SIGTERM for wrappers like Sunbird whose LaunchServices name can differ from the launched copy.
+            set pids (list_app_pids "$app")
+            kill -TERM $pids 2>/dev/null
+            if not wait_for_exit "$app" 10
+                set pids (list_app_pids "$app")
+                printf 'Warning: %s still has %d running process(es) after quit request.\n' "$app" (count $pids) >&2
+            end
+        end
+    end
+
+    printf 'Relaunching %s…\n' (string join ', ' $apps) >&2
+    for app in $apps
+        set -l bundle (find_app_bundle "$app")
+        if test -n "$bundle"
+            open -a "$bundle"
+        else
+            open -a "$app"
+        end
+    end
+
+    if test -n "$warmup_secs"
+        if test "$warmup_secs" -gt 0
+            for rem in (seq $warmup_secs -1 1)
+                isatty stderr; and printf '\r\033[KWarming up (%ds remaining)…' $rem >&2
+                sleep 1
+            end
+            isatty stderr; and printf '\r\033[K' >&2
+        end
+    else if isatty stdin
+        printf 'Apps relaunched. Open the same channel/state in each, let them settle, then press Enter to begin sampling… ' >&2
+        read -l _
+    end
+end
+
+function format_markdown_table --argument-names left_cols --description 'Render tab-separated rows as a GitHub-flavored Markdown table'
+    test -z "$left_cols"; and set left_cols 1
+    awk -F '\t' -v left_cols="$left_cols" '
+        NR == 1 {
+            printf "|"
+            for (i = 1; i <= NF; i++) printf " %s |", $i
+            printf "\n|"
+            for (i = 1; i <= NF; i++) printf (i <= left_cols ? " --- |" : " ---: |")
+            printf "\n"
+            next
+        }
+        {
+            printf "|"
+            for (i = 1; i <= NF; i++) printf " %s |", $i
+            printf "\n"
+        }
+    '
+end
+
+function format_discord_table --argument-names left_cols --description 'Render tab-separated rows as an aligned monospace code block for Discord'
+    test -z "$left_cols"; and set left_cols 1
+    awk -F '\t' -v left_cols="$left_cols" '
+        {
+            rows++
+            if (NF > max_cols) max_cols = NF
+            for (i = 1; i <= NF; i++) {
+                cell[rows, i] = $i
+                len = length($i)
+                if (len > width[i]) width[i] = len
+            }
+        }
+        END {
+            print "```text"
+            for (r = 1; r <= rows; r++) {
+                line = ""
+                for (c = 1; c <= max_cols; c++) {
+                    val = cell[r, c]
+                    pad = (c <= left_cols) ? sprintf("%-*s", width[c], val) : sprintf("%*s", width[c], val)
+                    line = (c == 1) ? pad : line "  " pad
+                }
+                sub(/[ ]+$/, "", line)
+                print line
+                if (r == 1) {
+                    sep = ""
+                    for (c = 1; c <= max_cols; c++) {
+                        dashes = ""
+                        for (k = 1; k <= width[c]; k++) dashes = dashes "-"
+                        sep = (c == 1) ? dashes : sep "  " dashes
+                    }
+                    print sep
+                }
+            }
+            print "```"
+        }
+    '
+end
+
+function sample_once --argument-names interval elapsed ts apps_file top_file ps_file samples_file procs_file capture_procs --description 'Collect one synchronized top+ps sample and append per-app totals'
+    # Two samples let top compute accurate delta %CPU, Energy Impact, and Idle Wakeups across the full interval.
+    top -l 2 -s "$interval" -stats pid,cpu,mem,power,idlew,threads >"$top_file" 2>/dev/null
+    set -l top_code $status
+    test $top_code -ne 0; and return $top_code
+
+    ps -axo pid=,command= >"$ps_file" 2>/dev/null; or return $status
+
+    awk \
+        -v apps_file="$apps_file" \
+        -v top_file="$top_file" \
+        -v ps_file="$ps_file" \
+        -v elapsed="$elapsed" \
+        -v ts="$ts" \
+        -v interval="$interval" \
+        -v procs_file="$procs_file" \
+        -v capture_procs="$capture_procs" '
+        function parse_mem_mb(raw,   val, unit, num) {
+            val = raw
+            gsub(/[+-]$/, "", val)
+            if (val == "" || val == "N/A") return 0
+            unit = substr(val, length(val), 1)
+            if (unit ~ /[BKMGT]/) {
+                num = substr(val, 1, length(val) - 1) + 0
+                if (unit == "T") return num * 1048576
+                if (unit == "G") return num * 1024
+                if (unit == "M") return num
+                if (unit == "K") return num / 1024
+                if (unit == "B") return num / 1048576
+            }
+            return (val + 0) / 1048576
+        }
+        function parse_num(raw,   val) {
+            val = raw
+            sub(/\/.*/, "", val)
+            gsub(/[^0-9.]/, "", val)
+            return (val == "") ? 0 : val + 0
+        }
+        function proc_label(cmd,   n, parts, name) {
+            n = split(cmd, parts, "/Contents/MacOS/")
+            name = (n >= 2) ? parts[n] : cmd
+            sub(/ -.*$/, "", name)
+            sub(/^ +/, "", name)
+            sub(/ +$/, "", name)
+            return name
+        }
+        FILENAME == apps_file {
+            if ($0 != "") {
+                app_count++
+                apps[app_count] = $0
+                needles[app_count] = "/" tolower($0) ".app/"
+            }
+            next
+        }
+        FILENAME == top_file {
+            if ($1 == "PID") {
+                # Keep only the final top block so %CPU and idle wakeups reflect the full interval delta.
+                split("", col_idx); split("", mem_mb); split("", cpu_pct)
+                split("", power_val); split("", idlew_val); split("", threads_val)
+                for (i = 1; i <= NF; i++) col_idx[$i] = i
+                in_table = 1
+                next
+            }
+            if (!in_table) next
+            pid = $1; gsub(/[^0-9]/, "", pid)
+            if (pid == "") next
+
+            c_cpu = col_idx["%CPU"]; if (!c_cpu) c_cpu = col_idx["CPU"]
+            c_mem = col_idx["MEM"]
+            c_pow = col_idx["POWER"]
+            c_idw = col_idx["IDLEW"]
+            c_th  = col_idx["#TH"];  if (!c_th) c_th = col_idx["THREADS"]
+
+            cpu_pct[pid]     = c_cpu ? parse_num($c_cpu) : 0
+            mem_mb[pid]      = c_mem ? parse_mem_mb($c_mem) : 0
+            power_val[pid]   = c_pow ? parse_num($c_pow) : 0
+            idlew_val[pid]   = c_idw ? (parse_num($c_idw) / interval) : 0
+            threads_val[pid] = c_th  ? int(parse_num($c_th)) : 0
+            next
+        }
+        FILENAME == ps_file {
+            pid = $1
+            if (pid !~ /^[0-9]+$/) next
+            cmd = $0
+            sub(/^ *[0-9]+ +/, "", cmd)
+            cmd_lower = tolower(cmd)
+            for (i = 1; i <= app_count; i++) {
+                if (index(cmd_lower, needles[i])) {
+                    a = apps[i]
+                    a_procs[a]++
+                    a_threads[a] += threads_val[pid]
+                    a_mem[a]     += mem_mb[pid]
+                    a_cpu[a]     += cpu_pct[pid]
+                    a_power[a]   += power_val[pid]
+                    a_idlew[a]   += idlew_val[pid]
+                    if (capture_procs == "1") {
+                        printf "%s\t%s\t%.2f\t%.1f\t%.1f\t%d\t%s\n", \
+                            a, proc_label(cmd), mem_mb[pid], cpu_pct[pid], power_val[pid], threads_val[pid], pid > procs_file
+                    }
+                    break
+                }
+            }
+            next
+        }
+        END {
+            for (i = 1; i <= app_count; i++) {
+                a = apps[i]
+                printf "%s\t%d\t%s\t%d\t%d\t%.2f\t%.2f\t%.2f\t%.2f\n", \
+                    ts, elapsed, a, a_procs[a] + 0, a_threads[a] + 0, a_mem[a] + 0, a_cpu[a] + 0, a_power[a] + 0, a_idlew[a] + 0
+            }
+        }
+    ' "$apps_file" "$top_file" "$ps_file" >>"$samples_file"
+end
+
+function build_summary_tsv --argument-names mode interval apps_file samples_file disk_file --description 'Aggregate sample rows into tab-separated summary table rows'
+    awk -F '\t' \
+        -v mode="$mode" \
+        -v interval="$interval" \
+        -v apps_file="$apps_file" \
+        -v disk_file="$disk_file" '
+        FILENAME == apps_file {
+            if ($0 != "") { app_count++; apps[app_count] = $0 }
+            next
+        }
+        FILENAME == disk_file {
+            has_disk = 1; disk_str[$1] = $2
+            next
+        }
+        {
+            a = $3; procs = $4 + 0
+            if (procs == 0) next
+            n[a]++
+            if (n[a] == 1) { first_mem[a] = $6 + 0; max_mem[a] = $6 + 0; max_cpu[a] = $7 + 0 }
+            last_mem[a] = $6 + 0
+            if (($6 + 0) > max_mem[a]) max_mem[a] = $6 + 0
+            if (($7 + 0) > max_cpu[a]) max_cpu[a] = $7 + 0
+
+            sum_procs[a]   += procs
+            sum_threads[a] += $5 + 0
+            sum_mem[a]     += $6 + 0
+            sum_cpu[a]     += $7 + 0
+            sum_energy[a]  += $8 + 0
+            sum_wake[a]    += $9 + 0
+            cpu_time[a]    += (($7 + 0) / 100.0) * interval
+        }
+        END {
+            if (mode == "snapshot") {
+                hdr = "App\tMemory\tCPU\tEnergy\tWakeups/s\tProcs (Threads)"
+                if (has_disk) hdr = hdr "\tDisk"
+                print hdr
+                for (i = 1; i <= app_count; i++) {
+                    a = apps[i]
+                    if (n[a] == 0) {
+                        row = a "\tnot running\t-\t-\t-\t0 (0)"
+                    } else {
+                        row = sprintf("%s\t%.1f MB\t%.1f%%\t%.1f\t%.1f\t%d (%d)", \
+                            a, last_mem[a], sum_cpu[a] / n[a], sum_energy[a] / n[a], sum_wake[a] / n[a], \
+                            int(sum_procs[a] / n[a] + 0.5), int(sum_threads[a] / n[a] + 0.5))
+                    }
+                    if (has_disk) row = row "\t" (disk_str[a] != "" ? disk_str[a] : "-")
+                    print row
+                }
+            } else {
+                # ASCII headers keep BSD awk column widths exact in Discord monospace blocks.
+                hdr = "App\tRAM Avg\tRAM Peak\tRAM +/-" "\tCPU Avg / Peak\tCPU Time\tEnergy\tWake/s\tProcs (Thr)"
+                if (has_disk) hdr = hdr "\tDisk"
+                print hdr
+                for (i = 1; i <= app_count; i++) {
+                    a = apps[i]
+                    if (n[a] == 0) {
+                        row = a "\tnot running\t-\t-\t-\t-\t-\t-\t0 (0)"
+                    } else {
+                        row = sprintf("%s\t%.1f MB\t%.1f MB\t%+.1f MB\t%.1f%% / %.1f%%\t%.1fs\t%.1f\t%.1f\t%d (%d)", \
+                            a, sum_mem[a] / n[a], max_mem[a], last_mem[a] - first_mem[a], \
+                            sum_cpu[a] / n[a], max_cpu[a], cpu_time[a], \
+                            sum_energy[a] / n[a], sum_wake[a] / n[a], \
+                            int(sum_procs[a] / n[a] + 0.5), int(sum_threads[a] / n[a] + 0.5))
+                    }
+                    if (has_disk) row = row "\t" (disk_str[a] != "" ? disk_str[a] : "-")
+                    print row
+                }
+            }
+        }
+    ' "$apps_file" "$disk_file" "$samples_file"
+end
+
+function build_procs_tsv --argument-names procs_file --description 'Sort per-process snapshot rows by app and memory descending'
+    printf 'App\tProcess\tMemory\tCPU\tEnergy\tThreads\n'
+    if test -s "$procs_file"
+        sort -t \t -k1,1 -k3,3nr "$procs_file" | awk -F '\t' '{
+            printf "%s\t%s\t%.1f MB\t%.1f%%\t%.1f\t%d\n", $1, $2, $3 + 0, $4 + 0, $5 + 0, $6 + 0
+        }'
+    end
+end
+
+set -l argparse_specs completions
+for spec in $option_specs
+    set -l parts (string split '|' -- "$spec")
+    set -l flag_spec "$parts[1]/$parts[2]"
+    test -n "$parts[3]"; and set flag_spec "$flag_spec="
+    set -a argparse_specs "$flag_spec"
+end
+
+argparse -n app-bench $argparse_specs -- $argv; or exit 2
+
+if set -q _flag_completions
+    emit_completions $option_specs
+    exit 0
+end
+
+if set -q _flag_help
+    usage $option_specs
+    exit 0
+end
+
+if test (count $argv) -lt 1
+    printf 'Error: provide at least one app name (for example: app-bench Vesktop Sunbird).\n\n' >&2
+    usage $option_specs >&2
+    exit 2
+end
+
+set -l fmt markdown
+set -q _flag_format; and set fmt (string lower -- "$_flag_format")
+set -q _flag_discord; and set fmt discord
+if not contains -- "$fmt" markdown discord both
+    printf 'Error: unsupported --format "%s" (expected markdown, discord, or both).\n' "$fmt" >&2
+    exit 2
+end
+
+set -l mode snapshot
+set -l duration_secs 0
+if set -q _flag_watch
+    set mode watch
+else if set -q _flag_duration
+    set mode benchmark
+    set duration_secs (parse_duration "$_flag_duration"); or begin
+        printf 'Error: invalid --duration "%s" (use e.g. 30s, 5m, 1h, or bare seconds).\n' "$_flag_duration" >&2
+        exit 2
+    end
+    if test "$duration_secs" -lt 1
+        printf 'Error: --duration must be at least 1 second.\n' >&2
+        exit 2
+    end
+end
+
+set -l interval 1
+test "$mode" != snapshot; and set interval 5
+if set -q _flag_interval
+    if not string match -qr '^[0-9]+$' -- "$_flag_interval"; or test "$_flag_interval" -lt 1
+        printf 'Error: --interval must be a positive integer number of seconds.\n' >&2
+        exit 2
+    end
+    set interval $_flag_interval
+end
+
+set -l warmup_secs ""
+if set -q _flag_warmup
+    set warmup_secs (parse_duration "$_flag_warmup"); or begin
+        printf 'Error: invalid --warmup "%s".\n' "$_flag_warmup" >&2
+        exit 2
+    end
+end
+
+set -l apps
+for raw_app in $argv
+    set -l norm (normalize_app_name "$raw_app")
+    not contains -- "$norm" $apps; and set -a apps "$norm"
+end
+
+set -l tmp (mktemp -d); or exit 1
+function cleanup_tmp --on-event fish_exit --inherit-variable tmp --description 'Remove temporary benchmark working files'
+    rm -rf -- "$tmp"
+end
+
+set -g interrupted 0
+function handle_int --on-signal INT --description 'Stop sampling gracefully on Ctrl-C so collected data is still reported'
+    set -g interrupted 1
+end
+
+set -l apps_file "$tmp/apps.txt"
+set -l top_file "$tmp/top.out"
+set -l ps_file "$tmp/ps.out"
+set -l samples_file "$tmp/samples.tsv"
+set -l procs_file "$tmp/procs.tsv"
+set -l disk_file "$tmp/disk.tsv"
+printf '%s\n' $apps >"$apps_file"
+: >"$samples_file"
+: >"$procs_file"
+: >"$disk_file"
+
+set -q _flag_fresh; and calibrate_apps "$warmup_secs" $apps
+
+set -l target_samples 1
+if test "$mode" = benchmark
+    set target_samples (math -s0 "ceil($duration_secs / $interval)")
+    test $target_samples -lt 1; and set target_samples 1
+else if test "$mode" = watch
+    set target_samples 0
+end
+
+set -l sample_num 0
+set -l start_epoch (date +%s)
+set -l capture_procs 0
+test "$mode" = snapshot; and set -q _flag_processes; and set capture_procs 1
+
+while true
+    test $interrupted -eq 1; and break
+    test $target_samples -gt 0; and test $sample_num -ge $target_samples; and break
+
+    set -l now_epoch (date +%s)
+    set -l ts (date '+%Y-%m-%dT%H:%M:%S')
+    set -l elapsed (math "$now_epoch - $start_epoch")
+    sample_once "$interval" "$elapsed" "$ts" "$apps_file" "$top_file" "$ps_file" "$samples_file" "$procs_file" "$capture_procs"
+    set -l rc $status
+    if test $rc -eq 130 -o $rc -eq 143; or test $interrupted -eq 1
+        set -g interrupted 1
+        break
+    end
+    if test $rc -ne 0
+        printf 'Error: sampling failed (exit %d).\n' $rc >&2
+        exit $rc
+    end
+
+    set sample_num (math "$sample_num + 1")
+
+    if test "$mode" != snapshot; and isatty stderr
+        set -l end_epoch (date +%s)
+        set -l elapsed_now (math "$end_epoch - $start_epoch")
+        set -l status_line (tail -n (count $apps) "$samples_file" | awk -F '\t' '{
+            item = ($4 + 0 == 0) ? $3 ": not running" : sprintf("%s: %.0f MB, %.1f%% CPU", $3, $6 + 0, $7 + 0)
+            out = (out == "") ? item : out " | " item
+        } END { print out }')
+        if test $target_samples -gt 0
+            printf '\r\033[K[%s · %d/%d] %s  (Ctrl-C to finish)' (format_duration $elapsed_now) $sample_num $target_samples "$status_line" >&2
+        else
+            printf '\r\033[K[%s · %d samples] %s  (Ctrl-C to finish)' (format_duration $elapsed_now) $sample_num "$status_line" >&2
+        end
+    end
+end
+
+test "$mode" != snapshot; and isatty stderr; and printf '\r\033[K' >&2
+
+if test $sample_num -eq 0
+    printf 'No samples collected.\n' >&2
+    exit 1
+end
+
+if set -q _flag_disk
+    for app in $apps
+        printf '%s\t%s\n' "$app" (measure_disk "$app") >>"$disk_file"
+    end
+end
+
+if set -q _flag_csv
+    printf 'timestamp,elapsed_s,app,procs,threads,mem_mb,cpu_pct,energy,wakeups_per_s\n' >"$_flag_csv"
+    awk -F '\t' '{
+        a = $3
+        gsub(/"/, "\"\"", a)
+        if (index(a, ",") || index(a, "\"")) a = "\"" a "\""
+        printf "%s,%s,%s,%s,%s,%s,%s,%s,%s\n", $1, $2, a, $4, $5, $6, $7, $8, $9
+    }' "$samples_file" >>"$_flag_csv"
+end
+
+set -l cpu_brand (sysctl -n machdep.cpu.brand_string 2>/dev/null)
+test -z "$cpu_brand"; and set cpu_brand (uname -m)
+set -l mem_bytes (sysctl -n hw.memsize 2>/dev/null)
+set -l ram_gb ""
+if string match -qr '^[0-9]+$' -- "$mem_bytes"
+    set ram_gb (awk -v b="$mem_bytes" 'BEGIN { printf "%.0f GB RAM", b / 1073741824 }')
+end
+set -l macos_ver (sw_vers -productVersion 2>/dev/null)
+set -l sys_parts "$cpu_brand"
+test -n "$ram_gb"; and set -a sys_parts "$ram_gb"
+test -n "$macos_ver"; and set -a sys_parts "macOS $macos_ver"
+set -l sys_line (string join ' · ' $sys_parts)
+
+set -l total_secs (math "$sample_num * $interval")
+set -l now_label (date '+%Y-%m-%d %H:%M')
+set -l title_suffix (printf 'Snapshot (%ss window)' $interval)
+test "$mode" != snapshot; and set title_suffix (format_duration $total_secs)" ($sample_num × "$interval"s)"
+
+set -l mode_tags
+set -q _flag_fresh; and set -a mode_tags "fresh launch"
+test $interrupted -eq 1; and set -a mode_tags "stopped early"
+set -l meta_extra ""
+test (count $mode_tags) -gt 0; and set meta_extra " · "(string join ', ' $mode_tags)
+
+set -l summary_tsv "$tmp/summary.tsv"
+build_summary_tsv "$mode" "$interval" "$apps_file" "$samples_file" "$disk_file" >"$summary_tsv"
+
+set -l procs_tsv "$tmp/procs_sorted.tsv"
+test $capture_procs -eq 1; and build_procs_tsv "$procs_file" >"$procs_tsv"
+
+set -l report_file "$tmp/report.txt"
+: >"$report_file"
+
+if test "$fmt" = markdown -o "$fmt" = both
+    begin
+        printf '### App Benchmark · %s\n\n' "$title_suffix"
+        printf '%s\n' "- **System:** $sys_line"
+        printf '%s\n' "- **Captured:** $now_label$meta_extra"
+        set -q _flag_note; and printf '%s\n' "- **Note:** $_flag_note"
+        printf '\n'
+        format_markdown_table 1 <"$summary_tsv"
+        if test $capture_procs -eq 1; and test -s "$procs_file"
+            printf '\n#### Processes\n\n'
+            format_markdown_table 2 <"$procs_tsv"
+        end
+    end >>"$report_file"
+end
+
+test "$fmt" = both; and printf '\n' >>"$report_file"
+
+if test "$fmt" = discord -o "$fmt" = both
+    begin
+        printf '**App Benchmark** · %s · %s%s\n' "$title_suffix" "$sys_line" "$meta_extra"
+        set -q _flag_note; and printf '*Note: %s*\n' "$_flag_note"
+        format_discord_table 1 <"$summary_tsv"
+        if test $capture_procs -eq 1; and test -s "$procs_file"
+            printf '**Processes**\n'
+            format_discord_table 2 <"$procs_tsv"
+        end
+    end >>"$report_file"
+end
+
+cat "$report_file"
+
+if set -q _flag_output
+    cp "$report_file" "$_flag_output"
+    printf 'Saved report to %s.\n' "$_flag_output" >&2
+end
+
+set -q _flag_csv; and printf 'Saved CSV to %s.\n' "$_flag_csv" >&2
+
+if not set -q _flag_no_copy; and type -q pbcopy
+    pbcopy <"$report_file"
+    printf 'Copied to clipboard.\n' >&2
+end
