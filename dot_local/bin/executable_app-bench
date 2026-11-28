@@ -161,14 +161,16 @@ function measure_disk --argument-names app --description 'Measure combined app b
     }'
 end
 
-function list_app_pids --argument-names app --description 'List running PIDs whose executable path belongs to /<app>.app/'
-    ps -axo pid=,command= | awk -v needle="/"(string lower -- "$app")".app/" '
-        index(tolower($0), needle) { print $1 }
+function list_app_pids --argument-names app --description 'List running PIDs whose executable path belongs to /<app>.app/Contents/'
+    # Build the bundle substring inside awk so awk's own argv never matches itself in ps output.
+    ps -axo pid=,command= | awk -v app="$app" -v self="$fish_pid" '
+        BEGIN { needle = "/" tolower(app) ".app/contents/" }
+        $1 != self && index(tolower($0), needle) { print $1 }
     '
 end
 
 function wait_for_exit --argument-names app attempts --description 'Poll until all processes for an app exit or attempts are exhausted'
-    for _ in (seq $attempts)
+    for attempt in (seq $attempts)
         test (count (list_app_pids "$app")) -eq 0; and return 0
         sleep 0.5
     end
@@ -216,7 +218,7 @@ function calibrate_apps --description 'Quit and relaunch target apps cleanly, th
         end
     else if isatty stdin
         printf 'Apps relaunched. Open the same channel/state in each, let them settle, then press Enter to begin sampling… ' >&2
-        read -l _
+        read -l ready
     end
 end
 
@@ -327,7 +329,7 @@ function sample_once --argument-names interval elapsed ts apps_file top_file ps_
             if ($0 != "") {
                 app_count++
                 apps[app_count] = $0
-                needles[app_count] = "/" tolower($0) ".app/"
+                needles[app_count] = "/" tolower($0) ".app/contents/"
             }
             next
         }

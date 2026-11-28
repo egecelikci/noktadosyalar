@@ -69,7 +69,9 @@ printf '%s\n' \
     '  202 /Users/tester/Library/Application Support/Sunbird/Sunbird.app/Contents/Frameworks/Discord Helper (Renderer).app/Contents/MacOS/Discord Helper (Renderer) --type=renderer' \
     'EOF' \
     'fi' \
-    'echo "  301 /Users/tester/Applications/Discord Phoenix.app/Contents/MacOS/Discord"' >"$tmp/bin/ps"
+    'echo "  301 /Users/tester/Applications/Discord Phoenix.app/Contents/MacOS/Discord"' \
+    'echo "  999 awk -v needle=/vesktop.app/ index(tolower(\$0), needle)"' \
+    'echo "  998 /opt/homebrew/bin/fish /Users/tester/.local/bin/app-bench /Applications/Vesktop.app/"' >"$tmp/bin/ps"
 
 # Mock top: emits two blocks (first invalid 0.0% CPU block, second valid delta block) and increments metrics across calls so RAM delta and peaks are testable.
 printf '%s\n' \
@@ -165,5 +167,7 @@ grep -Fq 'fresh launch' "$tmp/both.txt"; or fail 'missing fresh launch tag in re
 grep -Fq '### App Benchmark' "$tmp/both.txt"; or fail 'missing markdown section in --format both'
 grep -Fq '```text' "$tmp/both.txt"; or fail 'missing discord section in --format both'
 grep -Fq '| --- | --- | ---: |' "$tmp/snap.md"; or fail 'processes table should left-align both App and Process columns'
+not grep -Fq 'cannot overwrite read-only variable' "$tmp/both.err"; or fail 'read-only variable error in --fresh'
+not grep -Fq 'still has' "$tmp/both.err"; or fail 'unexpected leftover-process warning in --fresh'
 
 printf 'PASS: app-bench snapshot, benchmark, Discord/Markdown formatting, CSV, --fresh calibration, and Darwin chezmoi gating\n'
