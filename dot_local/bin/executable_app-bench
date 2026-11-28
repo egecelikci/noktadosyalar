@@ -217,8 +217,8 @@ function calibrate_apps --description 'Quit and relaunch target apps cleanly, th
             isatty stderr; and printf '\r\033[K' >&2
         end
     else if isatty stdin
-        printf 'Apps relaunched. Open the same channel/state in each, let them settle, then press Enter to begin sampling… ' >&2
-        read -l ready
+        printf 'Apps relaunched. Open the same channel/state in each and let them settle.\n' >&2
+        read -l -P 'Press Enter to begin sampling… ' ready
     end
 end
 
